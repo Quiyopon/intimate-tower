@@ -44,9 +44,10 @@ export function SettingsModal({
 
   const getTierColor = (tier: Tier) => {
     switch (tier) {
-      case 'tier1': return 'text-rose-400 bg-rose-400/10 border-rose-400/30';
-      case 'tier2': return 'text-amber-400 bg-amber-400/10 border-amber-400/30';
-      case 'tier3': return 'text-purple-400 bg-purple-400/10 border-purple-400/30';
+      case 'tier1': return 'text-amber-400 bg-amber-400/10 border-amber-400/30';
+      case 'tier2': return 'text-orange-500 bg-orange-500/10 border-orange-500/30';
+      case 'tier3': return 'text-red-500 bg-red-500/10 border-red-500/30';
+      case 'tier4': return 'text-rose-600 bg-rose-600/10 border-rose-600/30';
     }
   };
 
@@ -85,12 +86,12 @@ export function SettingsModal({
               <p className="text-sm text-slate-400 mb-6">
                 Toggle which tiers of dares are included in the game. Note: If a tier is disabled, pulling its block does nothing but increase instability.
               </p>
-              {(['tier1', 'tier2', 'tier3'] as Tier[]).map(tier => (
+              {(['tier1', 'tier2', 'tier3', 'tier4'] as Tier[]).map(tier => (
                 <div key={tier} className={`flex items-center justify-between p-4 rounded-2xl border ${getTierColor(tier)}`}>
                   <div>
                     <h3 className="font-bold capitalize">{tier.replace('tier', 'Level ')}</h3>
                     <p className="text-xs opacity-80 mt-1">
-                      {tier === 'tier1' ? 'Mild & Sensual' : tier === 'tier2' ? 'Spicy & Disrobing' : 'Intimate & Explicit'}
+                      {tier === 'tier1' ? 'Mild & Sensual' : tier === 'tier2' ? 'Spicy & Disrobing' : tier === 'tier3' ? 'Intimate & Explicit' : 'Oral & Extreme'}
                     </p>
                   </div>
                   <button
@@ -123,6 +124,7 @@ export function SettingsModal({
                     <option value="tier1">Level 1</option>
                     <option value="tier2">Level 2</option>
                     <option value="tier3">Level 3</option>
+                    <option value="tier4">Level 4</option>
                   </select>
                   <label className="flex items-center gap-2 text-sm bg-slate-900 border border-slate-700 rounded-lg px-3 cursor-pointer">
                     <input

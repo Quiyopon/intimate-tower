@@ -1,4 +1,4 @@
-export type Tier = 'tier1' | 'tier2' | 'tier3';
+export type Tier = 'tier1' | 'tier2' | 'tier3' | 'tier4';
 
 export interface Prompt {
   id: string;
@@ -17,13 +17,20 @@ export interface Block {
   orientation: 'horizontal' | 'vertical'; // alternates per layer
 }
 
+export interface Player {
+  id: string;
+  name: string;
+  passes: number;
+  score: number;
+}
+
 export interface GameState {
   blocks: Block[];
   instability: number;
   isCollapsed: boolean;
-  player1Passes: number;
-  player2Passes: number;
-  currentPlayer: 1 | 2;
+  players: Player[];
+  currentPlayerIndex: number;
   activePrompt: Prompt | null;
   tierToggles: Record<Tier, boolean>;
+  gameStarted: boolean;
 }

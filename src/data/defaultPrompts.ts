@@ -43,7 +43,6 @@ export const defaultPrompts: Prompt[] = [
   { id: generateId(), tier: 'tier3', text: 'Give your partner a sensual 2-minute full body massage (clothing optional).', isTimed: true, timeSeconds: 120 },
   { id: generateId(), tier: 'tier3', text: 'Let your partner explore your body with their hands (no lips) for 60 seconds.', isTimed: true, timeSeconds: 60 },
   { id: generateId(), tier: 'tier3', text: 'Kiss your way down your partner\'s body for 60 seconds.', isTimed: true, timeSeconds: 60 },
-  { id: generateId(), tier: 'tier3', text: 'Perform 60 seconds of oral pleasure on your partner.', isTimed: true, timeSeconds: 60 },
   { id: generateId(), tier: 'tier3', text: 'Let your partner tie your hands or restrain you for their next 2 turns.', isTimed: false },
   { id: generateId(), tier: 'tier3', text: 'Tease your partner\'s most sensitive spots without letting them climax for 2 minutes.', isTimed: true, timeSeconds: 120 },
   { id: generateId(), tier: 'tier3', text: 'Take full control: do whatever you want to your partner for the next 2 minutes.', isTimed: true, timeSeconds: 120 },
@@ -53,4 +52,16 @@ export const defaultPrompts: Prompt[] = [
   { id: generateId(), tier: 'tier3', text: 'Perform a slow, sensual striptease down to nothing.', isTimed: false },
   { id: generateId(), tier: 'tier3', text: 'Whisper exactly how you want your partner to touch you right now, then let them do it for 60 seconds.', isTimed: true, timeSeconds: 60 },
   { id: generateId(), tier: 'tier3', text: 'Both players must remove all remaining clothing.', isTimed: false },
+
+  // Tier 4: Oral & Extreme (Deep Crimson/Red accent)
+  { id: generateId(), tier: 'tier4', text: 'Perform 60 seconds of oral pleasure on your partner.', isTimed: true, timeSeconds: 60 },
+  { id: generateId(), tier: 'tier4', text: 'Perform oral sex on your partner for 2 minutes.', isTimed: true, timeSeconds: 120 },
+  { id: generateId(), tier: 'tier4', text: 'Use an ice cube in your mouth while performing oral for 30 seconds.', isTimed: true, timeSeconds: 30 },
+  { id: generateId(), tier: 'tier4', text: 'Tease your partner with oral, but stop right before they finish.', isTimed: false },
+  { id: generateId(), tier: 'tier4', text: 'Blindfold your partner and perform oral sex on them until they beg you to stop.', isTimed: false },
+  { id: generateId(), tier: 'tier4', text: 'Give your partner a deep, passionate blowjob or cunnilingus for 60 seconds.', isTimed: true, timeSeconds: 60 },
+  { id: generateId(), tier: 'tier4', text: 'Lick and tease your partner\'s inner thighs before performing oral for 2 minutes.', isTimed: true, timeSeconds: 120 },
+  { id: generateId(), tier: 'tier4', text: 'Edge your partner using only your mouth for 3 minutes.', isTimed: true, timeSeconds: 180 },
+  { id: generateId(), tier: 'tier4', text: 'Let your partner control the pace while you perform oral on them for 2 minutes.', isTimed: true, timeSeconds: 120 },
+  { id: generateId(), tier: 'tier4', text: 'Perform oral on your partner while they play with your hair.', isTimed: false },
 ];

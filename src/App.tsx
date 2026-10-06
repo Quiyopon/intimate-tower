@@ -1,11 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Settings, RefreshCw } from 'lucide-react';
 import { Tower } from './components/Tower';
 import { CardModal } from './components/CardModal';
 import { SettingsModal } from './components/SettingsModal';
+import { TitleScreen } from './components/TitleScreen';
 import { useGameState } from './hooks/useGameState';
-import { checkCollapse, calculateInstabilityIncrease } from './utils/gameLogic';
+import { initAudio, setMuted, startHeartbeatLoop, stopHeartbeatLoop, startAmbientMusic, stopAmbientMusic, setAmbientDucked } from './utils/audio';
+import { Volume2, VolumeX, Heart } from 'lucide-react';
 import type { Block, Tier } from './types';
+import { calculatePhysics } from './utils/gameLogic';
 import { AnimatePresence, motion } from 'framer-motion';
 
 function App() {
@@ -21,35 +24,70 @@ function App() {
   } = useGameState();
 
   const [showSettings, setShowSettings] = useState(false);
+  const [isMutedState, setIsMutedState] = useState(false);
+
+  // Sync ambient music and heartbeat based on game state
+  useEffect(() => {
+    if (!isMutedState && !gameState.isCollapsed) {
+      if (gameState.activePrompt) {
+        setAmbientDucked(true);
+        startHeartbeatLoop(true); // Heartbeat only during dare
+      } else {
+        stopHeartbeatLoop();
+        setAmbientDucked(false);
+        startAmbientMusic(); // Seductive ambient music during regular gameplay
+      }
+    } else {
+      stopHeartbeatLoop();
+      stopAmbientMusic();
+    }
+  }, [gameState.activePrompt, gameState.isCollapsed, isMutedState]);
+
+  // Unlock audio on first user interaction (browser autoplay policy)
+  useEffect(() => {
+    const unlockAudio = () => {
+      initAudio();
+      if (!isMutedState) {
+        startAmbientMusic();
+      }
+      document.removeEventListener('click', unlockAudio);
+      document.removeEventListener('touchstart', unlockAudio);
+    };
+    document.addEventListener('click', unlockAudio);
+    document.addEventListener('touchstart', unlockAudio);
+    return () => {
+      document.removeEventListener('click', unlockAudio);
+      document.removeEventListener('touchstart', unlockAudio);
+    };
+  }, [isMutedState]);
+
+  const toggleMute = () => {
+    const newState = !isMutedState;
+    setMuted(newState);
+    setIsMutedState(newState);
+    if (!newState) {
+      initAudio();
+      if (gameState.activePrompt) startHeartbeatLoop(true);
+      else startAmbientMusic();
+    }
+  };
 
   const handlePullBlock = (block: Block) => {
-    // Determine if tower collapses
-    const instabilityIncrease = calculateInstabilityIncrease(block.position);
-    const newInstability = Math.min(100, gameState.instability + instabilityIncrease);
-    const collapsed = checkCollapse(gameState.instability);
-
-    // Update block as removed
+    // Mark block as removed
     const newBlocks = gameState.blocks.map((b: Block) => 
       b.id === block.id ? { ...b, isRemoved: true } : b
     );
 
-    if (collapsed) {
-      if (navigator.vibrate) navigator.vibrate([300, 100, 300, 100, 500]);
-      updateGameState({
-        blocks: newBlocks,
-        instability: 100,
-        isCollapsed: true,
-      });
-      return;
-    }
+    // Calculate new instability
+    const { minMargin } = calculatePhysics(newBlocks);
+    const instability = Math.max(0, Math.min(100, 100 - (minMargin / 1.5) * 100));
 
     // Check if tier is active
     if (!gameState.tierToggles[block.tier]) {
-      // Tier is disabled, just remove block and next turn
       updateGameState({
         blocks: newBlocks,
-        instability: newInstability,
-        currentPlayer: gameState.currentPlayer === 1 ? 2 : 1,
+        instability,
+        currentPlayerIndex: (gameState.currentPlayerIndex + 1) % gameState.players.length,
       });
       return;
     }
@@ -57,11 +95,9 @@ function App() {
     // Get prompt
     const prompt = getRandomPrompt(block.tier);
     if (!prompt) {
-      // No prompts available for this tier
       updateGameState({
         blocks: newBlocks,
-        instability: newInstability,
-        currentPlayer: gameState.currentPlayer === 1 ? 2 : 1,
+        currentPlayerIndex: (gameState.currentPlayerIndex + 1) % gameState.players.length,
       });
       return;
     }
@@ -69,25 +105,37 @@ function App() {
     // Show prompt modal
     updateGameState({
       blocks: newBlocks,
-      instability: newInstability,
+      instability,
       activePrompt: prompt,
     });
   };
 
   const handleCompletePrompt = () => {
+    if (!gameState.activePrompt) return;
+    
+    // Increase heartbeat level based on tier
+    const tier = gameState.activePrompt.tier;
+    const scoreIncrease = tier === 'tier1' ? 1 : tier === 'tier2' ? 2 : tier === 'tier3' ? 3 : 5;
+    
+    const updatedPlayers = [...gameState.players];
+    updatedPlayers[gameState.currentPlayerIndex].score = 
+      (updatedPlayers[gameState.currentPlayerIndex].score || 0) + scoreIncrease;
+
     updateGameState({
       activePrompt: null,
-      currentPlayer: gameState.currentPlayer === 1 ? 2 : 1,
+      currentPlayerIndex: (gameState.currentPlayerIndex + 1) % gameState.players.length,
+      players: updatedPlayers,
     });
   };
 
   const handlePassPrompt = () => {
-    const isP1 = gameState.currentPlayer === 1;
+    const updatedPlayers = [...gameState.players];
+    updatedPlayers[gameState.currentPlayerIndex].passes -= 1;
+    
     updateGameState({
       activePrompt: null,
-      currentPlayer: isP1 ? 2 : 1,
-      player1Passes: isP1 ? gameState.player1Passes - 1 : gameState.player1Passes,
-      player2Passes: !isP1 ? gameState.player2Passes - 1 : gameState.player2Passes,
+      currentPlayerIndex: (gameState.currentPlayerIndex + 1) % gameState.players.length,
+      players: updatedPlayers,
     });
   };
 
@@ -100,7 +148,36 @@ function App() {
     });
   };
 
-  const currentPlayerPasses = gameState.currentPlayer === 1 ? gameState.player1Passes : gameState.player2Passes;
+  const currentPlayer = gameState.players[gameState.currentPlayerIndex] || { name: 'Player', passes: 0 };
+
+  if (!gameState.gameStarted) {
+    return (
+      <div className="min-h-screen bg-slate-950 text-slate-100 font-sans overflow-hidden">
+        <TitleScreen
+          players={gameState.players}
+          onUpdatePlayers={(players) => updateGameState({ players })}
+          onStart={() => updateGameState({ gameStarted: true })}
+          onOpenSettings={() => setShowSettings(true)}
+          isMuted={isMutedState}
+          onToggleMute={toggleMute}
+        />
+        <AnimatePresence>
+          {showSettings && (
+            <SettingsModal
+              onClose={() => setShowSettings(false)}
+              tierToggles={gameState.tierToggles}
+              onToggleTier={toggleTier}
+              prompts={prompts}
+              onAddPrompt={addPrompt}
+              onDeletePrompt={deletePrompt}
+              onResetPrompts={resetPrompts}
+              onResetGame={resetGame}
+            />
+          )}
+        </AnimatePresence>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans overflow-hidden">
@@ -112,27 +189,60 @@ function App() {
           </div>
           <h1 className="font-bold text-xl tracking-tight">Intimate Tower</h1>
         </div>
-        <button 
-          onClick={() => setShowSettings(true)}
-          className="p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors"
-        >
-          <Settings className="w-5 h-5" />
-        </button>
+        <div className="flex items-center gap-2">
+          <button 
+            onClick={toggleMute}
+            className="p-2 text-rose-200 hover:text-rose-100 hover:bg-white/10 rounded-full transition-colors"
+          >
+            {isMutedState ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+          </button>
+          <button 
+            onClick={() => setShowSettings(true)}
+            className="p-2 text-rose-200 hover:text-rose-100 hover:bg-white/10 rounded-full transition-colors"
+          >
+            <Settings className="w-5 h-5" />
+          </button>
+        </div>
       </header>
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col relative z-0">
-        <div className="text-center mt-4">
-          <div className="inline-block px-4 py-1.5 rounded-full bg-slate-900 border border-slate-800 text-sm font-semibold text-slate-300">
-            Player {gameState.currentPlayer}'s Turn
-          </div>
+        <div className="flex justify-center gap-4 mt-4 px-4 overflow-x-auto pb-2 z-10 relative">
+          {gameState.players.map((p, i) => {
+            const isCurrent = i === gameState.currentPlayerIndex;
+            return (
+              <div 
+                key={p.id}
+                className={`flex flex-col items-center px-4 py-2 rounded-xl border transition-all ${
+                  isCurrent 
+                    ? 'border-rose-500 bg-rose-500/10 shadow-[0_0_15px_rgba(244,63,94,0.3)]' 
+                    : 'border-slate-800 bg-slate-900/50 opacity-50'
+                }`}
+              >
+                <div className={`text-sm font-bold ${isCurrent ? 'text-white' : 'text-slate-400'}`}>
+                  {p.name}
+                </div>
+                <div className="flex items-center gap-1.5 mt-1">
+                  <Heart className={`w-4 h-4 ${p.score > 0 ? 'text-rose-500 fill-rose-500' : 'text-slate-600'}`} />
+                  <span className="text-xs font-black text-rose-200">
+                    {p.score > 0 ? `+${p.score}` : '0'}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
         </div>
 
-        <div className="flex-1 flex items-end justify-center pb-[10vh] overflow-hidden">
+        <div className="flex-1 flex items-end justify-center overflow-hidden">
           <Tower 
             blocks={gameState.blocks} 
             onPullBlock={handlePullBlock}
             isCollapsed={gameState.isCollapsed}
+            isPaused={!!gameState.activePrompt}
+            onCollapse={() => {
+              if (navigator.vibrate) navigator.vibrate([300, 100, 300, 100, 500]);
+              updateGameState({ isCollapsed: true, instability: 100 });
+            }}
           />
         </div>
 
@@ -166,7 +276,7 @@ function App() {
                 Collapse!
               </h2>
               <p className="text-xl mb-8 leading-relaxed">
-                Player {gameState.currentPlayer} caused the tower to fall. The loser owes the ultimate forfeit!
+                {currentPlayer.name} caused the tower to fall. The loser owes the ultimate forfeit!
               </p>
               <button
                 onClick={resetGame}
@@ -185,8 +295,8 @@ function App() {
         {gameState.activePrompt && !gameState.isCollapsed && (
           <CardModal
             prompt={gameState.activePrompt}
-            currentPlayer={gameState.currentPlayer}
-            passesAvailable={currentPlayerPasses}
+            currentPlayer={currentPlayer.name}
+            passesAvailable={currentPlayer.passes}
             onComplete={handleCompletePrompt}
             onPass={handlePassPrompt}
           />

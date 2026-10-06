@@ -6,12 +6,11 @@ import { motion } from 'framer-motion';
 
 interface CardModalProps {
   prompt: Prompt;
-  currentPlayer: 1 | 2;
+  currentPlayer: string;
   passesAvailable: number;
   onComplete: () => void;
   onPass: () => void;
 }
-
 export function CardModal({ prompt, currentPlayer, passesAvailable, onComplete, onPass }: CardModalProps) {
   const [timeLeft, setTimeLeft] = useState(prompt.timeSeconds || 0);
   const [isActive, setIsActive] = useState(false);
@@ -40,9 +39,10 @@ export function CardModal({ prompt, currentPlayer, passesAvailable, onComplete, 
 
   const getTierColors = (tier: Tier) => {
     switch (tier) {
-      case 'tier1': return 'from-rose-900/90 to-rose-950 border-rose-500/50 text-rose-100 shadow-rose-900/50';
-      case 'tier2': return 'from-amber-900/90 to-amber-950 border-amber-500/50 text-amber-100 shadow-amber-900/50';
-      case 'tier3': return 'from-purple-900/90 to-purple-950 border-purple-500/50 text-purple-100 shadow-purple-900/50';
+      case 'tier1': return 'from-amber-900/90 to-amber-950 border-amber-500/50 text-amber-100 shadow-amber-900/50';
+      case 'tier2': return 'from-orange-900/90 to-orange-950 border-orange-500/50 text-orange-100 shadow-orange-900/50';
+      case 'tier3': return 'from-red-900/90 to-red-950 border-red-500/50 text-red-100 shadow-red-900/50';
+      case 'tier4': return 'from-rose-900/90 to-rose-950 border-rose-600/50 text-rose-100 shadow-rose-900/50';
       default: return 'from-slate-900 to-slate-950 border-slate-500 text-slate-100';
     }
   };
@@ -66,7 +66,7 @@ export function CardModal({ prompt, currentPlayer, passesAvailable, onComplete, 
       >
         <div className="flex items-center justify-between mb-6">
           <span className="text-sm font-bold uppercase tracking-wider opacity-80">
-            Player {currentPlayer}'s Turn
+            {currentPlayer}'s Turn
           </span>
           <span className="text-xs font-semibold px-3 py-1 rounded-full bg-black/30 border border-white/10 uppercase tracking-widest">
             {prompt.tier.replace('tier', 'Level ')}

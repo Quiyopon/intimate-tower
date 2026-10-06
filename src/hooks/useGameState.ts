@@ -15,17 +15,33 @@ export const useGameState = () => {
   const [gameState, setGameState] = useState<GameState>(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
-      return JSON.parse(saved);
+      const parsed = JSON.parse(saved);
+      // Migrate old state
+      if (!parsed.players) {
+        parsed.players = [
+          { id: '1', name: 'Player 1', passes: parsed.player1Passes ?? INITIAL_PASSES, score: 0 },
+          { id: '2', name: 'Player 2', passes: parsed.player2Passes ?? INITIAL_PASSES, score: 0 }
+        ];
+        parsed.currentPlayerIndex = (parsed.currentPlayer === 2) ? 1 : 0;
+        parsed.gameStarted = true; // Assumes old games were already started
+      }
+      if (parsed.tierToggles && parsed.tierToggles.tier4 === undefined) {
+        parsed.tierToggles.tier4 = true;
+      }
+      return parsed;
     }
     return {
       blocks: generateBlocks(),
       instability: 0,
       isCollapsed: false,
-      player1Passes: INITIAL_PASSES,
-      player2Passes: INITIAL_PASSES,
-      currentPlayer: 1,
+      players: [
+        { id: '1', name: 'Player 1', passes: INITIAL_PASSES, score: 0 },
+        { id: '2', name: 'Player 2', passes: INITIAL_PASSES, score: 0 }
+      ],
+      currentPlayerIndex: 0,
       activePrompt: null,
-      tierToggles: { tier1: true, tier2: true, tier3: true },
+      tierToggles: { tier1: true, tier2: true, tier3: true, tier4: true },
+      gameStarted: false,
     };
   });
 
@@ -46,10 +62,10 @@ export const useGameState = () => {
       blocks: generateBlocks(),
       instability: 0,
       isCollapsed: false,
-      player1Passes: INITIAL_PASSES,
-      player2Passes: INITIAL_PASSES,
-      currentPlayer: 1,
+      currentPlayerIndex: 0,
       activePrompt: null,
+      gameStarted: false,
+      players: gameState.players.map(p => ({ ...p, passes: INITIAL_PASSES, score: 0 }))
     });
   };
 
