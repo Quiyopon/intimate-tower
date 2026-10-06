@@ -1,0 +1,44 @@
+@import "tailwindcss";
+
+@theme {
+  --color-tier1-base: #f43f5e;
+  --color-tier1-light: #fb7185;
+  --color-tier2-base: #f59e0b;
+  --color-tier2-light: #fbbf24;
+  --color-tier3-base: #8b5cf6;
+  --color-tier3-light: #a78bfa;
+}
+
+body {
+  @apply bg-slate-900 text-slate-100 overflow-hidden touch-none select-none;
+  overscroll-behavior-y: none;
+}
+
+/* 3D Tower specific styles */
+.perspective-container {
+  perspective: 1200px;
+}
+
+.preserve-3d {
+  transform-style: preserve-3d;
+}
+
+.shake-animation {
+  animation: shake 0.6s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+@keyframes shake {
+  10%, 90% { transform: translate3d(-2px, 0, 0) rotate3d(1, 1, 0, -1deg); }
+  20%, 80% { transform: translate3d(4px, 0, 0) rotate3d(1, 1, 0, 2deg); }
+  30%, 50%, 70% { transform: translate3d(-8px, 0, 0) rotate3d(1, 1, 0, -3deg); }
+  40%, 60% { transform: translate3d(8px, 0, 0) rotate3d(1, 1, 0, 3deg); }
+}
+
+.crumble-animation {
+  animation: crumble 1s ease-in forwards;
+}
+
+@keyframes crumble {
+  0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(500px) rotate(45deg); opacity: 0; }
+}
