@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import { Physics, useBox, usePlane } from '@react-three/cannon';
 import { OrbitControls, ContactShadows, Edges } from '@react-three/drei';
 import { useThemeStore } from '../store/themeStore';
-import type { Block, Tier } from '../types';
+import type { Block } from '../types';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
