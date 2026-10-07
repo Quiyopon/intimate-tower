@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Settings, RefreshCw } from 'lucide-react';
 import { Tower } from './components/Tower';
 import { CardModal } from './components/CardModal';
@@ -32,10 +32,11 @@ function App() {
   const [isMutedState, setIsMutedState] = useState(false);
   const [showCollapseModal, setShowCollapseModal] = useState(false);
   const [forfeitText, setForfeitText] = useState('');
-  const [pendingPrompt, setPendingPrompt] = useState<Prompt | null>(null);
-  const [isSettling, setIsSettling] = useState(false);
   const [showCustomForfeit, setShowCustomForfeit] = useState(false);
   const [customForfeitInput, setCustomForfeitInput] = useState('');
+  const [lastInteractingPlayerId, setLastInteractingPlayerId] = useState<string | null>(null);
+
+  const dareTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Sync ambient music and heartbeat based on game state
   useEffect(() => {
@@ -72,27 +73,6 @@ function App() {
     };
   }, [isMutedState]);
 
-  // Handle settling delay before showing prompt
-  useEffect(() => {
-    let timer: ReturnType<typeof setTimeout>;
-    if (isSettling && pendingPrompt && !gameState.isCollapsed) {
-      timer = setTimeout(() => {
-        setIsSettling(false);
-        updateGameState({ activePrompt: pendingPrompt });
-        setPendingPrompt(null);
-      }, 2000); // 2 second settle time
-    }
-    return () => clearTimeout(timer);
-  }, [isSettling, pendingPrompt, gameState.isCollapsed]);
-
-  // Cancel prompt if collapsed during settling
-  useEffect(() => {
-    if (gameState.isCollapsed && isSettling) {
-      setIsSettling(false);
-      setPendingPrompt(null);
-    }
-  }, [gameState.isCollapsed, isSettling]);
-
   const toggleMute = () => {
     const newState = !isMutedState;
     setMuted(newState);
@@ -107,6 +87,8 @@ function App() {
   const handlePullBlock = (block: Block) => {
     if (isInputLocked) return;
     isInputLocked = true;
+
+    setLastInteractingPlayerId(gameState.players[gameState.currentPlayerIndex]?.id || null);
 
     // Mark block as removed
     const newBlocks = gameState.blocks.map((b: Block) => 
@@ -137,12 +119,15 @@ function App() {
       return;
     }
 
-    // Set settling state
-    setIsSettling(true);
-    setPendingPrompt(prompt);
     updateGameState({
       blocks: newBlocks,
     });
+
+    if (dareTimeoutRef.current) clearTimeout(dareTimeoutRef.current);
+
+    dareTimeoutRef.current = setTimeout(() => {
+      updateGameState({ activePrompt: prompt });
+    }, 3500);
   };
 
   const handleCompletePrompt = () => {
@@ -186,6 +171,9 @@ function App() {
   };
 
   const currentPlayer = gameState.players[gameState.currentPlayerIndex] || { name: 'Player', passes: 0 };
+  const blamePlayer = lastInteractingPlayerId 
+    ? gameState.players.find(p => p.id === lastInteractingPlayerId) || currentPlayer
+    : gameState.players[0] || currentPlayer;
 
   const rollForfeit = () => {
     if (forfeits.length === 0) {
@@ -197,12 +185,14 @@ function App() {
 
   const handleResetGame = () => {
     setShowCollapseModal(false);
+    setLastInteractingPlayerId(null);
     resetGame();
     isInputLocked = false;
   };
 
   const handleBackToSetup = () => {
     setShowCollapseModal(false);
+    setLastInteractingPlayerId(null);
     resetGame();
     updateGameState({ gameStarted: false });
     isInputLocked = false;
@@ -255,8 +245,11 @@ function App() {
           isDareActive={!!gameState.activePrompt}
           onCollapse={() => {
             if (gameState.isCollapsed) return;
+            
+            if (dareTimeoutRef.current) clearTimeout(dareTimeoutRef.current);
+
             if (navigator.vibrate) navigator.vibrate([500, 100, 500, 100, 800]);
-            updateGameState({ isCollapsed: true, instability: 100 });
+            updateGameState({ isCollapsed: true, instability: 100, activePrompt: null });
             rollForfeit();
             setTimeout(() => {
               setShowCollapseModal(true);
@@ -362,7 +355,7 @@ function App() {
                 Collapse!
               </h2>
               <p className="text-lg mb-6 leading-relaxed text-slate-300">
-                <strong className="text-white text-xl">{currentPlayer.name}</strong> caused the tower to fall.
+                <strong className="text-white text-xl">{blamePlayer.name}</strong> caused the tower to fall.
               </p>
 
               {/* Stats */}
