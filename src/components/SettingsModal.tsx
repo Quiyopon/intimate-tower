@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { Prompt, Tier } from '../types';
 import { X, Plus, Trash2, RotateCcw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useThemeStore } from '../store/themeStore';
 
 interface SettingsModalProps {
   onClose: () => void;
@@ -12,6 +13,9 @@ interface SettingsModalProps {
   onDeletePrompt: (id: string) => void;
   onResetPrompts: () => void;
   onResetGame: () => void;
+  forfeits: string[];
+  onAddForfeit: (forfeit: string) => void;
+  onDeleteForfeit: (forfeit: string) => void;
 }
 
 export function SettingsModal({
@@ -23,6 +27,9 @@ export function SettingsModal({
   onDeletePrompt,
   onResetPrompts,
   onResetGame,
+  forfeits,
+  onAddForfeit,
+  onDeleteForfeit,
 }: SettingsModalProps) {
   const [activeTab, setActiveTab] = useState<'tiers' | 'prompts' | 'game'>('tiers');
   const [newPromptText, setNewPromptText] = useState('');
@@ -30,6 +37,15 @@ export function SettingsModal({
   const [newPromptIsTimed, setNewPromptIsTimed] = useState(false);
   const [newPromptTime, setNewPromptTime] = useState(60);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const [promptFilter, setPromptFilter] = useState<Tier | 'all'>('all');
+  const [promptPage, setPromptPage] = useState(1);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [newForfeitText, setNewForfeitText] = useState('');
+  const PROMPTS_PER_PAGE = 5;
+
+  const activeColors = useThemeStore((state) => state.getActiveColors());
+  const { theme, setTheme, setCustomColor } = useThemeStore();
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -58,13 +74,44 @@ export function SettingsModal({
     showToast("Prompt added successfully!");
   };
 
-  const getTierStyles = (tier: Tier) => {
-    switch (tier) {
-      case 'tier1': return { container: 'text-amber-400 bg-amber-400/10 border-amber-400/40', thumb: 'bg-amber-400', track: 'bg-amber-900/60 border-amber-400/30' };
-      case 'tier2': return { container: 'text-orange-500 bg-orange-500/10 border-orange-500/40', thumb: 'bg-orange-500', track: 'bg-orange-900/60 border-orange-500/30' };
-      case 'tier3': return { container: 'text-red-500 bg-red-500/10 border-red-500/40', thumb: 'bg-red-500', track: 'bg-red-900/60 border-red-500/30' };
-      case 'tier4': return { container: 'text-rose-600 bg-rose-600/10 border-rose-600/40', thumb: 'bg-rose-500', track: 'bg-rose-900/60 border-rose-500/30' };
+  const handleAddForfeit = () => {
+    if (!newForfeitText.trim()) return;
+    if (forfeits.includes(newForfeitText.trim())) {
+      showToast("This forfeit already exists!");
+      return;
     }
+    onAddForfeit(newForfeitText.trim());
+    setNewForfeitText('');
+    showToast("Forfeit added successfully!");
+  };
+
+  const getTierStyles = (tier: Tier, isActive: boolean = true) => {
+    const color = activeColors[tier] || '#ffffff';
+    if (!isActive) return { container: {}, track: {}, thumb: {} };
+
+    const r = parseInt(color.slice(1, 3), 16) || 0;
+    const g = parseInt(color.slice(3, 5), 16) || 0;
+    const b = parseInt(color.slice(5, 7), 16) || 0;
+    const luma = (r * 299 + g * 587 + b * 114) / 1000;
+    
+    // If the color is too dark (e.g. #1A1A1A), invert the container text/borders to remain visible
+    const isDark = luma < 50;
+
+    return {
+      container: { 
+        color: isDark ? '#e2e8f0' : color, 
+        backgroundColor: isDark ? '#1e293b' : `${color}1A`, 
+        borderColor: isDark ? '#334155' : `${color}66` 
+      },
+      track: { 
+        backgroundColor: isDark ? '#0f172a' : `${color}33`, 
+        borderColor: isDark ? '#334155' : `${color}4D` 
+      },
+      thumb: { 
+        backgroundColor: color,
+        border: isDark ? '1px solid #475569' : 'none'
+      }
+    };
   };
 
   return (
@@ -104,6 +151,10 @@ export function SettingsModal({
           ))}
         </div>
 
+        <style>{`
+          .hide-scrollbar::-webkit-scrollbar { display: none; }
+          .hide-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
+        `}</style>
         <div className="flex-1 overflow-y-auto p-5 custom-scrollbar pb-safe-8">
           
           <AnimatePresence>
@@ -121,19 +172,36 @@ export function SettingsModal({
 
           {activeTab === 'tiers' && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
-              <p className="text-sm text-slate-400 mb-6 leading-relaxed">
+              <p className="text-sm text-slate-400 mb-4 leading-relaxed">
                 Toggle which tiers of dares are included in the game. Note: If a tier is disabled, pulling its block does nothing but increase instability.
               </p>
-              {(['tier1', 'tier2', 'tier3', 'tier4'] as Tier[]).map(tier => {
-                const styles = getTierStyles(tier);
-                const isActive = tierToggles[tier];
-                return (
+              
+              {/* Theme Selector */}
+              <div className="flex gap-2 p-1 bg-slate-800 rounded-xl mb-4">
+                {(['natural', 'classic', 'monochrome', 'custom'] as const).map(t => (
                   <button
+                    key={t}
+                    onClick={() => setTheme(t)}
+                    className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all ${
+                      theme === t ? 'bg-slate-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    {t}
+                  </button>
+                ))}
+              </div>
+
+              {(['tier1', 'tier2', 'tier3', 'tier4'] as Tier[]).map(tier => {
+                const isActive = tierToggles[tier];
+                const styles = getTierStyles(tier, isActive);
+                return (
+                  <div
                     key={tier} 
                     onClick={() => handleToggleTier(tier)}
-                    className={`w-full flex items-center justify-between p-5 rounded-2xl border transition-all text-left group active:scale-95 ${
-                      isActive ? styles.container : 'border-slate-800 bg-slate-900/50 text-slate-500 opacity-60 hover:opacity-100'
+                    className={`w-full flex items-center justify-between p-5 rounded-2xl border transition-all text-left group cursor-pointer active:scale-95 ${
+                      isActive ? '' : 'border-slate-800 bg-slate-900/50 text-slate-500 opacity-60 hover:opacity-100'
                     }`}
+                    style={styles.container}
                   >
                     <div>
                       <h3 className={`font-black uppercase tracking-wider ${isActive ? '' : 'text-slate-400'}`}>
@@ -143,16 +211,32 @@ export function SettingsModal({
                         {tier === 'tier1' ? 'Mild & Sensual' : tier === 'tier2' ? 'Spicy & Disrobing' : tier === 'tier3' ? 'Intimate & Explicit' : 'Oral & Extreme'}
                       </p>
                     </div>
-                    <div
-                      className={`w-14 h-8 rounded-full transition-colors relative border flex items-center px-1 ${
-                        isActive ? styles.track : 'bg-slate-800 border-slate-700'
-                      }`}
-                    >
-                      <div className={`w-6 h-6 rounded-full transition-transform shadow-md ${
-                        isActive ? `translate-x-6 ${styles.thumb}` : 'translate-x-0 bg-slate-500'
-                      }`} />
+                    <div className="flex items-center gap-4">
+                      {theme === 'custom' && (
+                        <input
+                          type="color"
+                          value={activeColors[tier]}
+                          onChange={(e) => {
+                            e.stopPropagation();
+                            setCustomColor(tier, e.target.value);
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                          className="w-8 h-8 rounded-full border-0 cursor-pointer overflow-hidden p-0"
+                        />
+                      )}
+                      <div
+                        className={`w-14 h-8 rounded-full transition-colors relative border flex items-center px-1 ${
+                          isActive ? '' : 'bg-slate-800 border-slate-700'
+                        }`}
+                        style={styles.track}
+                      >
+                        <div className={`w-6 h-6 rounded-full transition-transform shadow-md ${
+                          isActive ? 'translate-x-6' : 'translate-x-0 bg-slate-500'
+                        }`}
+                        style={styles.thumb} />
+                      </div>
                     </div>
-                  </button>
+                  </div>
                 );
               })}
             </motion.div>
@@ -212,38 +296,84 @@ export function SettingsModal({
               <div className="space-y-3">
                 <h3 className="font-bold mb-3 flex justify-between items-center px-1">
                   <span className="uppercase tracking-wider text-sm text-slate-300">Existing ({prompts.length})</span>
-                  <button onClick={onResetPrompts} className="text-xs text-rose-400 hover:text-rose-300 flex items-center gap-1 font-bold bg-rose-500/10 px-3 py-1.5 rounded-lg transition-colors">
+                  <button onClick={onResetPrompts} className="text-xs text-rose-400 hover:text-rose-300 flex items-center gap-1 font-bold bg-rose-500/10 px-3 min-h-[44px] rounded-lg transition-colors">
                     <RotateCcw className="w-3.5 h-3.5" /> Restore Defaults
                   </button>
                 </h3>
+
+                {/* Filters */}
+                <div className="flex overflow-x-auto gap-2 mb-4 pb-2 hide-scrollbar">
+                  <button onClick={() => { setPromptFilter('all'); setPromptPage(1); }} className={`min-h-[44px] px-4 rounded-full text-xs font-bold whitespace-nowrap transition-colors ${promptFilter === 'all' ? 'bg-pink-500 text-white' : 'bg-slate-800 text-slate-400'}`}>All</button>
+                  <button onClick={() => { setPromptFilter('tier1'); setPromptPage(1); }} className={`min-h-[44px] px-4 rounded-full text-xs font-bold whitespace-nowrap transition-colors ${promptFilter === 'tier1' ? 'bg-amber-500 text-white' : 'bg-slate-800 text-slate-400'}`}>Level 1</button>
+                  <button onClick={() => { setPromptFilter('tier2'); setPromptPage(1); }} className={`min-h-[44px] px-4 rounded-full text-xs font-bold whitespace-nowrap transition-colors ${promptFilter === 'tier2' ? 'bg-orange-500 text-white' : 'bg-slate-800 text-slate-400'}`}>Level 2</button>
+                  <button onClick={() => { setPromptFilter('tier3'); setPromptPage(1); }} className={`min-h-[44px] px-4 rounded-full text-xs font-bold whitespace-nowrap transition-colors ${promptFilter === 'tier3' ? 'bg-red-500 text-white' : 'bg-slate-800 text-slate-400'}`}>Level 3</button>
+                  <button onClick={() => { setPromptFilter('tier4'); setPromptPage(1); }} className={`min-h-[44px] px-4 rounded-full text-xs font-bold whitespace-nowrap transition-colors ${promptFilter === 'tier4' ? 'bg-pink-500 text-white' : 'bg-slate-800 text-slate-400'}`}>Level 4</button>
+                </div>
+
                 <div className="space-y-2">
-                  {prompts.map(prompt => {
-                    const styles = getTierStyles(prompt.tier);
+                  {(() => {
+                    const filtered = prompts.filter(p => promptFilter === 'all' || p.tier === promptFilter);
+                    const totalPages = Math.max(1, Math.ceil(filtered.length / PROMPTS_PER_PAGE));
+                    const paginated = filtered.slice((promptPage - 1) * PROMPTS_PER_PAGE, promptPage * PROMPTS_PER_PAGE);
+
                     return (
-                      <div key={prompt.id} className="bg-slate-800/80 p-4 rounded-2xl flex items-start gap-3 border border-slate-700/50">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-2">
-                            <span className={`text-[10px] uppercase font-black px-2 py-0.5 rounded border ${styles.container}`}>
-                              {prompt.tier.replace('tier', 'Lvl ')}
+                      <>
+                        {paginated.map(prompt => {
+                          const styles = getTierStyles(prompt.tier, true);
+                          return (
+                            <div key={prompt.id} className="bg-slate-800/80 p-4 rounded-2xl flex items-start gap-3 border border-slate-700/50">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <span 
+                                    className="text-[10px] uppercase font-black px-2 py-0.5 rounded border"
+                                    style={styles.container}
+                                  >
+                                    {prompt.tier.replace('tier', 'Lvl ')}
+                                  </span>
+                                  {prompt.isTimed && (
+                                    <span className="text-[10px] text-slate-300 font-bold bg-slate-900 border border-slate-700 px-2 py-0.5 rounded">
+                                      {prompt.timeSeconds}s
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-sm text-slate-200" title={prompt.text}>{prompt.text}</p>
+                              </div>
+                              <button
+                                onClick={() => onDeletePrompt(prompt.id)}
+                                className="bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl transition-colors shrink-0"
+                                aria-label="Delete prompt"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          );
+                        })}
+                        
+                        {/* Pagination UI */}
+                        {filtered.length > PROMPTS_PER_PAGE && (
+                          <div className="flex justify-between items-center mt-6 pt-4 border-t border-slate-700/50">
+                            <button 
+                              onClick={() => setPromptPage(p => Math.max(1, p - 1))}
+                              disabled={promptPage === 1}
+                              className="min-w-[44px] min-h-[44px] px-4 bg-slate-800 rounded-xl font-bold text-sm text-slate-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              Prev
+                            </button>
+                            <span className="text-xs font-bold text-slate-500">
+                              Page {promptPage} of {totalPages}
                             </span>
-                            {prompt.isTimed && (
-                              <span className="text-[10px] text-slate-300 font-bold bg-slate-900 border border-slate-700 px-2 py-0.5 rounded">
-                                {prompt.timeSeconds}s
-                              </span>
-                            )}
+                            <button 
+                              onClick={() => setPromptPage(p => Math.min(totalPages, p + 1))}
+                              disabled={promptPage === totalPages}
+                              className="min-w-[44px] min-h-[44px] px-4 bg-slate-800 rounded-xl font-bold text-sm text-slate-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              Next
+                            </button>
                           </div>
-                          <p className="text-sm text-slate-200" title={prompt.text}>{prompt.text}</p>
-                        </div>
-                        <button
-                          onClick={() => onDeletePrompt(prompt.id)}
-                          className="bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white p-2 rounded-full transition-colors shrink-0"
-                          aria-label="Delete prompt"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
+                        )}
+                      </>
                     );
-                  })}
+                  })()}
                 </div>
               </div>
             </motion.div>
@@ -254,17 +384,78 @@ export function SettingsModal({
               <div className="bg-red-950/30 border border-red-500/20 p-5 rounded-3xl text-center">
                 <h3 className="text-red-400 font-bold mb-2 uppercase tracking-wider text-sm">Danger Zone</h3>
                 <p className="text-slate-400 text-sm mb-6">This will reset all player scores and start a fresh tower.</p>
-                <button
-                  onClick={() => {
-                    if (confirm('Are you sure you want to reset the current game?')) {
-                      onResetGame();
-                      onClose();
-                    }
-                  }}
-                  className="w-full flex items-center justify-center gap-2 bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white border border-red-500/50 p-4 rounded-xl font-black uppercase tracking-wider transition-all active:scale-95"
-                >
-                  <RotateCcw className="w-5 h-5" /> Reset Progress
-                </button>
+                {showResetConfirm ? (
+                  <div className="space-y-3">
+                    <p className="font-bold text-white text-sm">Are you sure?</p>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => {
+                          onResetGame();
+                          onClose();
+                        }}
+                        className="flex-1 bg-red-500 hover:bg-red-600 text-white min-h-[44px] rounded-xl font-bold transition-all active:scale-95"
+                      >
+                        Yes, Reset
+                      </button>
+                      <button
+                        onClick={() => setShowResetConfirm(false)}
+                        className="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 min-h-[44px] rounded-xl font-bold transition-all active:scale-95"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setShowResetConfirm(true)}
+                    className="w-full flex items-center justify-center gap-2 bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white border border-red-500/50 min-h-[44px] rounded-xl font-black uppercase tracking-wider transition-all active:scale-95"
+                  >
+                    <RotateCcw className="w-5 h-5" /> Reset Progress
+                  </button>
+                )}
+              </div>
+
+              {/* Ultimate Forfeits Section */}
+              <div className="bg-slate-800/40 border border-slate-700/50 p-5 rounded-3xl mt-6">
+                <h3 className="text-slate-300 font-bold mb-4 uppercase tracking-wider text-sm text-center">Ultimate Forfeits</h3>
+                
+                <div className="flex gap-2 mb-6">
+                  <input
+                    type="text"
+                    value={newForfeitText}
+                    onChange={(e) => setNewForfeitText(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleAddForfeit()}
+                    placeholder="Enter a new forfeit..."
+                    className="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 min-h-[44px] text-sm text-white placeholder-slate-500 focus:outline-none focus:border-pink-500 transition-colors"
+                  />
+                  <button
+                    onClick={handleAddForfeit}
+                    disabled={!newForfeitText.trim()}
+                    className="bg-pink-500 hover:bg-pink-600 disabled:opacity-50 disabled:hover:bg-pink-500 text-white min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center transition-all active:scale-95"
+                    aria-label="Add forfeit"
+                  >
+                    <Plus className="w-5 h-5" />
+                  </button>
+                </div>
+
+                <div className="space-y-2 max-h-[300px] overflow-y-auto custom-scrollbar pr-1">
+                  {forfeits.length === 0 ? (
+                    <p className="text-sm text-slate-500 text-center py-4">No forfeits defined.</p>
+                  ) : (
+                    forfeits.map((forfeit, idx) => (
+                      <div key={idx} className="bg-slate-900/50 p-3 rounded-xl flex items-start justify-between gap-3 border border-slate-800">
+                        <p className="text-sm text-slate-300 flex-1 pt-1 leading-relaxed">{forfeit}</p>
+                        <button
+                          onClick={() => onDeleteForfeit(forfeit)}
+                          className="bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg transition-colors shrink-0"
+                          aria-label="Delete forfeit"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
               </div>
             </motion.div>
           )}

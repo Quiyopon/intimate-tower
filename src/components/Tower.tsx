@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { Canvas } from '@react-three/fiber';
+import { Canvas, useFrame } from '@react-three/fiber';
+import * as THREE from 'three';
 import { Physics, useBox, usePlane } from '@react-three/cannon';
 import { OrbitControls, ContactShadows, Edges } from '@react-three/drei';
-import { RotateCcw } from 'lucide-react';
+import { useThemeStore } from '../store/themeStore';
 import type { Block, Tier } from '../types';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -16,19 +17,12 @@ interface TowerProps {
   onPullBlock: (block: Block) => void;
   isCollapsed: boolean;
   onCollapse: () => void;
+  isDareActive?: boolean;
 }
 
 const BLOCK_H = 0.5;
 
-function getTierColors(tier: Tier) {
-  switch (tier) {
-    case 'tier1': return '#fbbf24'; // amber-400
-    case 'tier2': return '#f97316'; // orange-500
-    case 'tier3': return '#ef4444'; // red-500
-    case 'tier4': return '#e11d48'; // rose-600
-    default: return '#94a3b8'; // slate-400
-  }
-}
+
 
 // Floor
 function Floor() {
@@ -45,8 +39,99 @@ function Floor() {
   );
 }
 
+// Global store to track physical state without React overhead
+export const blockPhysicsStates = new Map<string, { pos: [number, number, number], rot: [number, number, number, number] }>();
+
+// Real-time Physics Instability Tracker
+function InstabilityTracker({ isCollapsed, blocksRemoved }: { isCollapsed: boolean, blocksRemoved: number }) {
+  const currentInstabilityRef = useRef(0);
+
+  useFrame(() => {
+    if (isCollapsed) {
+      // Force 100% on collapse
+      const textEl = document.getElementById('instability-text');
+      const barEl = document.getElementById('instability-bar');
+      const containerEl = document.getElementById('instability-container');
+      if (textEl && barEl) {
+        textEl.innerText = '100%';
+        barEl.style.width = '100%';
+        barEl.className = 'h-full rounded-full bg-gradient-to-r transition-colors duration-200 from-pink-500 to-red-600 shadow-[0_0_15px_rgba(225,29,72,0.9)]';
+        textEl.className = 'text-sm font-black text-red-400 animate-pulse drop-shadow-[0_0_8px_rgba(248,113,113,0.8)]';
+        if (containerEl) containerEl.className = 'absolute bottom-safe-8 bottom-8 left-1/2 -translate-x-1/2 w-72 text-center pointer-events-none z-10 animate-pulse';
+      }
+      return;
+    }
+
+    let totalX = 0, totalZ = 0;
+    let maxTilt = 0;
+    let activeBlocks = 0;
+    
+    const upVector = new THREE.Vector3(0, 1, 0);
+    const blockUp = new THREE.Vector3();
+    const quaternion = new THREE.Quaternion();
+
+    blockPhysicsStates.forEach((state) => {
+      totalX += state.pos[0];
+      totalZ += state.pos[2];
+      activeBlocks++;
+
+      quaternion.set(state.rot[0], state.rot[1], state.rot[2], state.rot[3]);
+      blockUp.set(0, 1, 0).applyQuaternion(quaternion);
+      const tilt = blockUp.angleTo(upVector);
+      if (tilt > maxTilt) maxTilt = tilt;
+    });
+
+    if (activeBlocks === 0) return;
+
+    const comX = totalX / activeBlocks;
+    const comZ = totalZ / activeBlocks;
+    const comOffset = Math.sqrt(comX * comX + comZ * comZ);
+
+    const offsetFactor = Math.min(1, comOffset / 0.8);
+    const tiltFactor = Math.min(1, maxTilt / 0.35);
+    
+    let target = Math.max(offsetFactor, tiltFactor) * 100;
+    
+    const baseline = Math.min(40, (blocksRemoved / 18) * 40);
+    target = Math.max(baseline, target);
+    target = Math.min(99, target);
+
+    // Lerp smoothing
+    currentInstabilityRef.current += (target - currentInstabilityRef.current) * 0.05;
+
+    // Direct DOM updates
+    const val = Math.round(currentInstabilityRef.current);
+    const textEl = document.getElementById('instability-text');
+    const barEl = document.getElementById('instability-bar');
+    const containerEl = document.getElementById('instability-container');
+
+    if (textEl && barEl) {
+      textEl.innerText = `${val}%`;
+      barEl.style.width = `${val}%`;
+
+      if (val < 40) {
+        barEl.className = 'h-full rounded-full bg-gradient-to-r transition-colors duration-200 from-cyan-400 to-blue-500 shadow-[0_0_10px_rgba(34,211,238,0.8)]';
+        textEl.className = 'text-sm font-black text-slate-200';
+        if (containerEl) containerEl.className = 'absolute bottom-safe-8 bottom-8 left-1/2 -translate-x-1/2 w-72 text-center pointer-events-none z-10';
+      } else if (val < 70) {
+        barEl.className = 'h-full rounded-full bg-gradient-to-r transition-colors duration-200 from-yellow-400 to-amber-500 shadow-[0_0_10px_rgba(250,204,21,0.8)]';
+        textEl.className = 'text-sm font-black text-slate-200';
+        if (containerEl) containerEl.className = 'absolute bottom-safe-8 bottom-8 left-1/2 -translate-x-1/2 w-72 text-center pointer-events-none z-10';
+      } else {
+        barEl.className = 'h-full rounded-full bg-gradient-to-r transition-colors duration-200 from-pink-500 to-red-600 shadow-[0_0_15px_rgba(225,29,72,0.9)]';
+        textEl.className = 'text-sm font-black text-red-400 animate-pulse drop-shadow-[0_0_8px_rgba(248,113,113,0.8)]';
+        if (containerEl) containerEl.className = 'absolute bottom-safe-8 bottom-8 left-1/2 -translate-x-1/2 w-72 text-center pointer-events-none z-10 animate-pulse';
+      }
+    }
+  });
+
+  return null;
+}
+
 // 3D Block Component
-function PhysicsBlock({ block, onPullBlock, isCollapsed, onCollapse, pullCount }: { block: Block, onPullBlock: (block: Block) => void, isCollapsed: boolean, onCollapse: () => void, pullCount: number }) {
+function PhysicsBlock({ block, onPullBlock, isCollapsed, onCollapse, pullCount, isDareActive = false }: { block: Block, onPullBlock: (block: Block) => void, isCollapsed: boolean, onCollapse: () => void, pullCount: number, isDareActive?: boolean }) {
+  const activeColors = useThemeStore((state) => state.getActiveColors());
+  const theme = useThemeStore((state) => state.theme);
 
   const isVertical = block.orientation === 'vertical';
   // Use slightly shorter length to decrease maximum overhang stability
@@ -85,6 +170,14 @@ function PhysicsBlock({ block, onPullBlock, isCollapsed, onCollapse, pullCount }
     api.applyForce([0, -5, 0], [0, 0, 0]);
   }, [pullCount, api]);
 
+  // Zero-drift protection on dare modal open
+  useEffect(() => {
+    if (isDareActive) {
+      api.velocity.set(0, 0, 0);
+      api.angularVelocity.set(0, 0, 0);
+    }
+  }, [isDareActive, api]);
+
   const [isHovered, setHovered] = useState(false);
 
   // Track Y position to detect falls
@@ -94,6 +187,13 @@ function PhysicsBlock({ block, onPullBlock, isCollapsed, onCollapse, pullCount }
     const startingY = (block.layer * BLOCK_H) + (BLOCK_H / 2);
 
     const unsubPos = api.position.subscribe((p) => {
+      // Sync state for dynamic instability calculation
+      if (!blockPhysicsStates.has(block.id)) {
+        blockPhysicsStates.set(block.id, { pos: p, rot: [0, 0, 0, 1] });
+      } else {
+        blockPhysicsStates.get(block.id)!.pos = p;
+      }
+
       // Ground contact: any block originally above layer 1 that falls below 0.5 Y
       const isGroundContact = p[1] <= 0.5 && startingY > 0.6;
       if (isGroundContact) {
@@ -101,14 +201,31 @@ function PhysicsBlock({ block, onPullBlock, isCollapsed, onCollapse, pullCount }
       }
     });
 
+    const unsubRot = api.quaternion.subscribe((q) => {
+      if (!blockPhysicsStates.has(block.id)) {
+        blockPhysicsStates.set(block.id, { pos: [0, 0, 0], rot: q });
+      } else {
+        blockPhysicsStates.get(block.id)!.rot = q;
+      }
+    });
+
     return () => {
       unsubPos();
+      unsubRot();
+      blockPhysicsStates.delete(block.id);
     };
-  }, [api.position, isCollapsed, onCollapse, block.layer, block.isRemoved]);
+  }, [api.position, api.quaternion, isCollapsed, onCollapse, block.layer, block.isRemoved, block.id]);
 
   // Removed teleportation logic as we now unmount removed blocks completely
 
-  const baseColor = getTierColors(block.tier);
+  // Procedural wood grain variations so blocks don't look identical
+  const woodColors = ['#C19A6B', '#B5885C', '#A87A51', '#D2A679'];
+  const proceduralIndex = (block.layer * 7 + block.position * 13) % woodColors.length;
+  
+  const baseColor = theme === 'natural' ? woodColors[proceduralIndex] : activeColors[block.tier];
+  
+  // Highlight accent logic
+  const accentColor = theme === 'natural' ? activeColors[block.tier] : baseColor;
 
   return (
     <mesh 
@@ -129,30 +246,27 @@ function PhysicsBlock({ block, onPullBlock, isCollapsed, onCollapse, pullCount }
       scale={isHovered ? 1.02 : 1}
     >
       <boxGeometry args={size as [number, number, number]} />
-      <meshPhysicalMaterial 
+      <meshStandardMaterial 
         color={baseColor}
-        emissive={isHovered ? baseColor : '#000000'}
-        emissiveIntensity={isHovered ? 0.5 : 0}
-        roughness={isHovered ? 0.2 : 0.6}
-        metalness={0.2}
-        clearcoat={isHovered ? 0.5 : 0}
-        clearcoatRoughness={0.2}
+        emissive={isHovered ? accentColor : '#000000'}
+        emissiveIntensity={isHovered ? (theme === 'natural' ? 0.4 : 0.2) : 0}
+        roughness={0.85}
+        metalness={0.0}
       />
-      <Edges scale={1.001} color={isHovered ? "#ffffff" : "#000000"} opacity={isHovered ? 0.8 : 0.4} transparent />
+      <Edges 
+        scale={1.001} 
+        color={isHovered ? (theme === 'natural' ? accentColor : "#ffffff") : "#000000"} 
+        opacity={isHovered ? 0.8 : (theme === 'natural' ? 0.1 : 0.2)} 
+        transparent 
+      />
     </mesh>
   );
 }
 
 // Tower Wrapper
-export function Tower({ blocks, onPullBlock, isCollapsed, onCollapse }: TowerProps) {
+export function Tower({ blocks, onPullBlock, isCollapsed, onCollapse, isDareActive = false }: TowerProps) {
   const [hasInteracted, setHasInteracted] = useState(false);
   const controlsRef = useRef<any>(null);
-
-  const resetCamera = () => {
-    if (controlsRef.current) {
-      controlsRef.current.reset();
-    }
-  };
 
   return (
     <div className="w-full h-full absolute inset-0 touch-none">
@@ -168,17 +282,6 @@ export function Tower({ blocks, onPullBlock, isCollapsed, onCollapse }: TowerPro
           </div>
         </div>
       )}
-
-      {/* Floating Action Button for Camera Reset */}
-      <div className="absolute bottom-32 right-6 z-20 pointer-events-auto">
-        <button
-          onClick={resetCamera}
-          className="bg-slate-800/80 backdrop-blur-md border border-slate-700 hover:border-pink-500 text-slate-300 hover:text-pink-400 p-4 rounded-full shadow-[0_0_15px_rgba(0,0,0,0.5)] hover:shadow-[0_0_15px_rgba(236,72,153,0.3)] transition-all active:scale-90"
-          aria-label="Reset Camera"
-        >
-          <RotateCcw className="w-6 h-6" />
-        </button>
-      </div>
 
       <Canvas shadows camera={{ position: [14, 12, 14], fov: 35 }}>
         <color attach="background" args={['#05050f']} />
@@ -202,6 +305,7 @@ export function Tower({ blocks, onPullBlock, isCollapsed, onCollapse }: TowerPro
         
         {/* Physics Engine with custom iterations for stability */}
         <Physics 
+          isPaused={isDareActive}
           iterations={40} // Lowered slightly so instability resolves faster
           gravity={[0, -18, 0]} // Harsher gravity
           allowSleep={false}
@@ -221,8 +325,10 @@ export function Tower({ blocks, onPullBlock, isCollapsed, onCollapse }: TowerPro
               isCollapsed={isCollapsed}
               onCollapse={onCollapse}
               pullCount={blocks.filter(b => b.isRemoved).length}
+              isDareActive={isDareActive}
             />
           ))}
+          <InstabilityTracker isCollapsed={isCollapsed} blocksRemoved={blocks.filter(b => b.isRemoved).length} />
         </Physics>
         
         <OrbitControls 

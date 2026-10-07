@@ -23,9 +23,10 @@ export const generateBlocks = (): Block[] => {
   for (let layer = 0; layer < 14; layer++) {
     const orientation = layer % 2 === 0 ? 'horizontal' : 'vertical';
 
+    const gameId = Math.random().toString(36).substring(2, 9);
     for (let pos = 0; pos < 3; pos++) {
       blocks.push({
-        id: `block-${layer}-${pos}`,
+        id: `block-${gameId}-${layer}-${pos}`,
         layer,
         position: pos as 0 | 1 | 2,
         tier: tierPool[blockIndex++],
