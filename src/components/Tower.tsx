@@ -75,6 +75,7 @@ function PhysicsBlock({ block, onPullBlock, isCollapsed, onCollapse, pullCount }
     angularDamping: 0.05, 
     fixedRotation: false,
     allowSleep: false,
+    sleepState: 0, // 0 = AWAKE
   }));
 
   // Force wake up when a block is pulled
