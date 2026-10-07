@@ -140,9 +140,9 @@ function PhysicsBlock({ block, onPullBlock, isCollapsed, onCollapse, pullCount, 
   
   // Introduce realistic imperfections to break perfect mathematical balance
   const { jitterX, jitterZ, jitterRot } = useMemo(() => ({
-    jitterX: (Math.random() - 0.5) * 0.01,
-    jitterZ: (Math.random() - 0.5) * 0.01,
-    jitterRot: (Math.random() - 0.5) * 0.02,
+    jitterX: (Math.random() - 0.5) * 0.001,
+    jitterZ: (Math.random() - 0.5) * 0.001,
+    jitterRot: (Math.random() - 0.5) * 0.002,
   }), []);
 
   const initialPos = isVertical 
@@ -154,7 +154,7 @@ function PhysicsBlock({ block, onPullBlock, isCollapsed, onCollapse, pullCount, 
     args: size as [number, number, number],
     position: initialPos as [number, number, number],
     rotation: [0, jitterRot, 0],
-    material: { friction: 0.15, restitution: 0.0 },
+    material: { friction: 0.4, restitution: 0.0 },
     linearDamping: 0.1,
     angularDamping: 0.2, 
     fixedRotation: false,
@@ -324,13 +324,13 @@ export function Tower({ blocks, onPullBlock, isCollapsed, onCollapse, isDareActi
         {/* Physics Engine with custom iterations for stability */}
         <Physics 
           isPaused={isDareActive}
-          iterations={40} // Lowered slightly so instability resolves faster
-          gravity={[0, -18, 0]} // Harsher gravity
+          iterations={120} // High precision math to eliminate solver squish and drifting
+          gravity={[0, -9.81, 0]} // Earth gravity to reduce bottom-block squish
           allowSleep={false}
           defaultContactMaterial={{
-            friction: 0.15,
+            friction: 0.4,
             restitution: 0.0,
-            contactEquationStiffness: 1e7,
+            contactEquationStiffness: 1e9,
             contactEquationRelaxation: 4
           }}
         >

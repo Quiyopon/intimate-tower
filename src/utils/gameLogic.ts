@@ -5,12 +5,12 @@ export const INITIAL_PASSES = 2;
 export const generateBlocks = (): Block[] => {
   const blocks: Block[] = [];
   
-  // Create a pool of 42 tiers
+  // Create a pool of 54 tiers
   const tierPool: Tier[] = [
-    ...Array(11).fill('tier1'),
-    ...Array(11).fill('tier2'),
-    ...Array(10).fill('tier3'),
-    ...Array(10).fill('tier4')
+    ...Array(14).fill('tier1'),
+    ...Array(14).fill('tier2'),
+    ...Array(13).fill('tier3'),
+    ...Array(13).fill('tier4')
   ];
 
   // Fisher-Yates shuffle the tier pool
@@ -20,7 +20,7 @@ export const generateBlocks = (): Block[] => {
   }
 
   let blockIndex = 0;
-  for (let layer = 0; layer < 14; layer++) {
+  for (let layer = 0; layer < 18; layer++) {
     const orientation = layer % 2 === 0 ? 'horizontal' : 'vertical';
 
     const gameId = Math.random().toString(36).substring(2, 9);
