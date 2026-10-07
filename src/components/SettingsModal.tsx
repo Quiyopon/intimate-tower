@@ -45,7 +45,7 @@ export function SettingsModal({
   const PROMPTS_PER_PAGE = 5;
 
   const activeColors = useThemeStore((state) => state.getActiveColors());
-  const { theme, setTheme, setCustomColor } = useThemeStore();
+  const { theme, setCustomColor } = useThemeStore();
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -85,7 +85,7 @@ export function SettingsModal({
     showToast("Forfeit added successfully!");
   };
 
-  const getTierStyles = (tier: Tier, isActive: boolean) => {
+  const getTierStyles = (_tier: Tier, isActive: boolean) => {
     if (!isActive) return {};
     
     // Deep velvet UI for settings menu toggles

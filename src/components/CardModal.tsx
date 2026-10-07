@@ -37,7 +37,7 @@ export function CardModal({ prompt, currentPlayer, passesAvailable, onComplete, 
 
   const toggleTimer = () => setIsActive(!isActive);
 
-  const getTierColors = (tier: Tier) => {
+  const getTierColors = (_tier: Tier) => {
     // Standardized deep velvet look for all cards
     return 'from-[#2e0915] to-[#15040a] border-rose-900/50 text-rose-200 shadow-[0_0_40px_rgba(159,18,57,0.3)]';
   };
