@@ -12,44 +12,7 @@ interface TitleScreenProps {
   isMuted: boolean;
   onToggleMute: () => void;
 }
-
-const NeonTowerIcon = () => (
-  <svg viewBox="0 0 100 120" className="w-[72px] h-[86px] text-pink-400 drop-shadow-[0_0_12px_rgba(244,114,182,0.8)]">
-    <g fill="none" stroke="currentColor" strokeWidth="4" strokeLinejoin="round" strokeLinecap="round">
-      {/* Top face */}
-      <path d="M50 5 L85 20 L50 35 L15 20 Z" />
-      
-      {/* Left and Right faces of layers */}
-      {/* Layer 1 */}
-      <path d="M15 20 V 35 L50 50 V 35" />
-      <path d="M85 20 V 35 L50 50" />
-      {/* Layer 2 */}
-      <path d="M15 35 V 50 L50 65 V 50" />
-      <path d="M85 35 V 50 L50 65" />
-      {/* Layer 3 */}
-      <path d="M15 50 V 65 L50 80 V 65" />
-      <path d="M85 50 V 65 L50 80" />
-      {/* Layer 4 */}
-      <path d="M15 65 V 80 L50 95 V 80" />
-      <path d="M85 65 V 80 L50 95" />
-
-      {/* Cross lines to simulate pieces */}
-      <path d="M38 10 L73 25" />
-      <path d="M27 15 L62 30" />
-      {/* Vertical splits for alternating layers */}
-      {/* Layer 1 (front face split) */}
-      <path d="M32 28 V 43" />
-      <path d="M68 28 V 43" />
-      {/* Layer 2 (side splits) */}
-      <path d="M50 50 V 65" />
-      {/* Layer 3 */}
-      <path d="M32 58 V 73" />
-      <path d="M68 58 V 73" />
-      {/* Layer 4 */}
-      <path d="M50 80 V 95" />
-    </g>
-  </svg>
-);
+import { TowerIcon } from './TowerIcon';
 
 export function TitleScreen({ players, onUpdatePlayers, onStart, onOpenSettings, isMuted, onToggleMute }: TitleScreenProps) {
   const [newPlayerName, setNewPlayerName] = useState('');
@@ -105,18 +68,18 @@ export function TitleScreen({ players, onUpdatePlayers, onStart, onOpenSettings,
         {/* Title & Branding */}
         <div className="flex items-center justify-center gap-4 mb-8">
           <div className="flex flex-col text-right">
-            <h1 className="text-4xl sm:text-5xl font-black tracking-tight text-white drop-shadow-[0_0_10px_rgba(236,72,153,0.8)] leading-none">
+            <h1 className="text-4xl sm:text-5xl font-black tracking-tight text-rose-100 drop-shadow-[0_0_15px_rgba(159,18,57,0.5)] leading-none">
               INTIMATE
             </h1>
-            <h1 className="text-4xl sm:text-5xl font-black tracking-tight text-white drop-shadow-[0_0_10px_rgba(236,72,153,0.8)] leading-none mt-1">
+            <h1 className="text-4xl sm:text-5xl font-black tracking-tight text-rose-300 drop-shadow-[0_0_10px_rgba(159,18,57,0.4)] leading-none mt-1">
               TOWER
             </h1>
           </div>
-          <NeonTowerIcon />
+          <TowerIcon className="w-[72px] h-[86px] text-rose-300 drop-shadow-[0_0_15px_rgba(159,18,57,0.6)]" />
         </div>
 
-        <p className="text-slate-300 text-center text-sm font-medium mb-4">
-          Add players to begin (2-8 players)
+        <p className="text-slate-400 text-center text-sm font-medium mb-4 uppercase tracking-widest">
+          Add players to begin (2-8)
         </p>
 
         {/* Add Player Input */}
@@ -126,12 +89,12 @@ export function TitleScreen({ players, onUpdatePlayers, onStart, onOpenSettings,
             value={newPlayerName}
             onChange={(e) => setNewPlayerName(e.target.value)}
             placeholder="Player Name..."
-            className="flex-1 bg-slate-900/60 border border-slate-700/50 rounded-xl px-4 py-4 text-white placeholder-slate-400 focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 transition-all text-lg shadow-inner"
+            className="flex-1 bg-rose-950/20 border border-rose-800/80 rounded-xl px-4 py-4 text-rose-100 placeholder-rose-900/80 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition-all text-lg"
           />
           <button
             type="submit"
             disabled={!newPlayerName.trim()}
-            className="bg-gradient-to-r from-pink-500 to-purple-600 disabled:from-slate-700 disabled:to-slate-800 disabled:text-slate-400 text-white font-black px-6 py-4 rounded-xl transition-all shadow-[0_0_15px_rgba(236,72,153,0.4)] disabled:shadow-none hover:brightness-110 active:scale-95 text-lg uppercase tracking-wider"
+            className="bg-rose-600 border border-transparent disabled:bg-rose-950/40 disabled:border-rose-900/60 disabled:text-rose-900/60 text-white hover:bg-rose-500 font-black px-6 py-4 rounded-xl transition-all active:scale-95 text-lg uppercase tracking-wider shadow-[0_0_15px_rgba(225,29,72,0.2)] disabled:shadow-none"
           >
             Add
           </button>
@@ -168,12 +131,12 @@ export function TitleScreen({ players, onUpdatePlayers, onStart, onOpenSettings,
                     initial={{ opacity: 0, x: -20, scale: 0.95 }}
                     animate={{ opacity: 1, x: 0, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
-                    className="flex items-center justify-between bg-slate-800/60 border border-slate-700/50 px-5 py-4 rounded-2xl group shadow-lg"
+                    className="flex items-center justify-between bg-rose-950/30 border border-rose-800/60 hover:border-rose-600/80 px-5 py-4 rounded-2xl group transition-colors"
                   >
-                    <span className="font-bold text-lg">{player.name}</span>
+                    <span className="font-bold text-lg text-rose-200">{player.name}</span>
                     <button
                       onClick={() => handleRemovePlayer(player.id)}
-                      className="bg-rose-500/20 text-rose-400 hover:bg-rose-500 hover:text-white p-2 rounded-full transition-all active:scale-90"
+                      className="text-rose-800 hover:bg-rose-900 border border-transparent hover:border-rose-800 hover:text-rose-300 p-2 rounded-xl transition-all active:scale-90 opacity-60 group-hover:opacity-100"
                       aria-label={`Remove ${player.name}`}
                     >
                       <X className="w-5 h-5" />
@@ -192,8 +155,8 @@ export function TitleScreen({ players, onUpdatePlayers, onStart, onOpenSettings,
             disabled={!isGameReady}
             className={`w-full flex items-center justify-center gap-3 font-black py-5 rounded-2xl transition-all duration-300 text-xl uppercase tracking-wider ${
               isGameReady 
-                ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-[0_0_30px_rgba(236,72,153,0.5)] hover:shadow-[0_0_40px_rgba(236,72,153,0.7)] hover:brightness-110 active:scale-95' 
-                : 'bg-slate-800 text-slate-500 border border-slate-700 opacity-70 cursor-not-allowed'
+                ? 'bg-gradient-to-r from-rose-500 to-rose-700 border border-rose-400/50 text-white hover:from-rose-400 hover:to-rose-600 active:scale-95 shadow-[0_0_20px_rgba(225,29,72,0.4)] hover:shadow-[0_0_30px_rgba(225,29,72,0.6)]' 
+                : 'bg-transparent text-slate-700 border border-slate-800 cursor-not-allowed'
             }`}
           >
             Start Game

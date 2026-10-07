@@ -38,13 +38,8 @@ export function CardModal({ prompt, currentPlayer, passesAvailable, onComplete, 
   const toggleTimer = () => setIsActive(!isActive);
 
   const getTierColors = (tier: Tier) => {
-    switch (tier) {
-      case 'tier1': return 'from-[#2a1a08] to-[#140c04] border-amber-500/40 text-amber-100 shadow-[0_0_40px_rgba(245,158,11,0.2)]';
-      case 'tier2': return 'from-[#3a1d12] to-[#1a0c08] border-orange-500/40 text-orange-100 shadow-[0_0_40px_rgba(249,115,22,0.2)]';
-      case 'tier3': return 'from-[#381122] to-[#1c0811] border-rose-500/40 text-rose-100 shadow-[0_0_40px_rgba(225,29,72,0.2)]';
-      case 'tier4': return 'from-[#2e092b] to-[#150413] border-fuchsia-500/40 text-fuchsia-100 shadow-[0_0_40px_rgba(217,70,239,0.2)]';
-      default: return 'from-slate-900 to-slate-950 border-slate-500 text-slate-100';
-    }
+    // Standardized deep velvet look for all cards
+    return 'from-[#2e0915] to-[#15040a] border-rose-900/50 text-rose-200 shadow-[0_0_40px_rgba(159,18,57,0.3)]';
   };
 
   const getTierLabel = (tier: Tier) => {
@@ -104,7 +99,7 @@ export function CardModal({ prompt, currentPlayer, passesAvailable, onComplete, 
               disabled={timeLeft === 0}
               className={cn(
                 "flex items-center gap-2 px-8 py-4 rounded-full font-bold transition-all w-full max-w-[240px] justify-center text-lg uppercase tracking-wider",
-                isActive ? "bg-red-500/20 text-red-300 hover:bg-red-500/30 border border-red-500/30" : "bg-white/20 hover:bg-white/30 text-white border border-white/20",
+                isActive ? "bg-rose-500/20 text-rose-300 hover:bg-rose-500/30 border border-rose-500/30" : "bg-white/20 hover:bg-white/30 text-white border border-white/20",
                 timeLeft === 0 && "opacity-50 pointer-events-none"
               )}
             >
@@ -117,7 +112,7 @@ export function CardModal({ prompt, currentPlayer, passesAvailable, onComplete, 
         <div className="flex flex-col gap-3 mt-auto relative z-10">
           <button
             onClick={onComplete}
-            className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl bg-gradient-to-r from-emerald-400 to-emerald-600 text-white hover:brightness-110 transition-all font-black text-xl shadow-[0_0_20px_rgba(52,211,153,0.4)] active:scale-95 uppercase tracking-wider"
+            className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl bg-gradient-to-r from-rose-500 to-rose-700 border border-rose-400 hover:from-rose-400 hover:to-rose-600 text-white transition-all font-black text-xl shadow-[0_0_20px_rgba(225,29,72,0.4)] hover:shadow-[0_0_30px_rgba(225,29,72,0.6)] active:scale-95 uppercase tracking-wider"
           >
             <CheckCircle className="w-6 h-6" />
             Complete
@@ -129,7 +124,7 @@ export function CardModal({ prompt, currentPlayer, passesAvailable, onComplete, 
               "w-full flex items-center justify-center gap-2 py-4 rounded-2xl transition-all font-bold text-lg active:scale-95 border",
               passesAvailable > 0 
                 ? "bg-black/40 hover:bg-black/60 text-white border-white/20" 
-                : "bg-red-950/50 hover:bg-red-900/60 text-red-300 border-red-500/30 shadow-[0_0_15px_rgba(239,68,68,0.2)]"
+                : "bg-rose-950 hover:bg-rose-900 text-rose-300 border-rose-900 shadow-[0_0_15px_rgba(159,18,57,0.2)]"
             )}
           >
             {passesAvailable > 0 ? (

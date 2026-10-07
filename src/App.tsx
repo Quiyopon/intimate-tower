@@ -4,6 +4,7 @@ import { Tower } from './components/Tower';
 import { CardModal } from './components/CardModal';
 import { SettingsModal } from './components/SettingsModal';
 import { TitleScreen } from './components/TitleScreen';
+import { TowerIcon } from './components/TowerIcon';
 import { useGameState } from './hooks/useGameState';
 import { initAudio, setMuted, startHeartbeatLoop, stopHeartbeatLoop, startAmbientMusic, stopAmbientMusic, setAmbientDucked } from './utils/audio';
 import { Volume2, VolumeX, Heart } from 'lucide-react';
@@ -259,23 +260,23 @@ function App() {
       </div>
 
       {/* Header */}
-      <header className="flex items-center justify-between p-4 pt-safe z-10 relative bg-gradient-to-b from-[#05050f] to-transparent pb-10 pointer-events-none">
+      <header className="flex items-center justify-between p-4 pt-safe z-10 relative bg-gradient-to-b from-[#0f0407] to-transparent pb-10 pointer-events-none">
         <div className="flex items-center gap-2 pointer-events-auto">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-rose-500 to-purple-600 flex items-center justify-center font-bold shadow-lg">
-            IT
+          <div className="w-10 h-10 rounded-xl bg-rose-950 border border-rose-800 flex items-center justify-center shadow-lg shadow-rose-900/20 text-rose-200">
+            <TowerIcon className="w-6 h-6" />
           </div>
           <h1 className="font-bold text-xl tracking-tight text-white drop-shadow-md">Intimate Tower</h1>
         </div>
         <div className="flex items-center gap-2 pointer-events-auto">
           <button 
             onClick={toggleMute}
-            className="p-2.5 text-rose-200 hover:text-white bg-slate-900/50 backdrop-blur-md border border-slate-700/50 hover:bg-slate-800 rounded-full transition-colors shadow-lg"
+            className="p-2.5 text-rose-300 hover:text-rose-100 bg-rose-950/60 backdrop-blur-md border border-rose-800/80 hover:bg-rose-900 hover:border-rose-700 rounded-full transition-colors shadow-lg shadow-rose-900/10"
           >
             {isMutedState ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
           </button>
           <button 
             onClick={() => setShowSettings(true)}
-            className="p-2.5 text-rose-200 hover:text-white bg-slate-900/50 backdrop-blur-md border border-slate-700/50 hover:bg-slate-800 rounded-full transition-colors shadow-lg"
+            className="p-2.5 text-rose-300 hover:text-rose-100 bg-rose-950/60 backdrop-blur-md border border-rose-800/80 hover:bg-rose-900 hover:border-rose-700 rounded-full transition-colors shadow-lg shadow-rose-900/10"
           >
             <Settings className="w-5 h-5" />
           </button>
@@ -294,7 +295,7 @@ function App() {
                 key={p.id}
                 className={`flex flex-col items-center px-5 py-2.5 rounded-2xl border transition-all duration-300 ${
                   isCurrent 
-                    ? 'border-pink-500 bg-pink-500/20 shadow-[0_0_20px_rgba(236,72,153,0.5)] scale-110 z-10' 
+                    ? 'border-rose-500 bg-rose-500/10 shadow-[0_0_20px_rgba(225,29,72,0.3)] scale-110 z-10' 
                     : 'border-white/10 bg-white/10 scale-95'
                 }`}
               >
@@ -302,7 +303,7 @@ function App() {
                   {p.name}
                 </div>
                 <div className="flex items-center gap-1.5 mt-1">
-                  <Heart className={`w-4 h-4 ${p.score > 0 ? (isCurrent ? 'text-pink-500 fill-pink-500' : 'text-pink-500/60 fill-pink-500/60') : 'text-white/20'}`} />
+                  <Heart className={`w-4 h-4 ${p.score > 0 ? (isCurrent ? 'text-rose-500 fill-rose-500' : 'text-rose-500/60 fill-rose-500/60') : 'text-white/20'}`} />
                   <span className={`text-xs font-black ${isCurrent ? 'text-rose-200' : 'text-white/40'}`}>
                     {p.score > 0 ? `+${p.score}` : '0'}
                   </span>
@@ -313,9 +314,9 @@ function App() {
         </div>
 
         {/* Turn Banner */}
-        <div className="absolute top-[80px] left-0 w-full flex justify-center pointer-events-none z-10">
-          <div className="bg-slate-900/80 backdrop-blur-md border border-pink-500/30 px-6 py-2 rounded-full shadow-[0_0_20px_rgba(236,72,153,0.3)] animate-pulse">
-            <span className="text-pink-400 font-bold drop-shadow-[0_0_5px_rgba(236,72,153,0.8)]">{currentPlayer.name}'s Turn</span>
+        <div className="w-full flex justify-center pointer-events-none z-10 mt-1 mb-4">
+          <div className="bg-slate-900/80 backdrop-blur-md border border-rose-900/50 px-6 py-2 rounded-full shadow-[0_0_20px_rgba(159,18,57,0.2)] animate-pulse">
+            <span className="text-rose-400 font-bold drop-shadow-[0_0_5px_rgba(225,29,72,0.8)]">{currentPlayer.name}'s Turn</span>
             <span className="text-slate-300 ml-2">— Pull a block carefully</span>
           </div>
         </div>
@@ -351,7 +352,7 @@ function App() {
               animate={{ scale: 1, y: 0 }}
               className="max-w-md w-full flex flex-col items-center"
             >
-              <h2 className="text-5xl sm:text-6xl font-black text-red-500 mb-2 tracking-tighter uppercase drop-shadow-[0_0_20px_rgba(239,68,68,0.8)]">
+              <h2 className="text-5xl sm:text-6xl font-black text-rose-400 mb-2 tracking-tighter uppercase drop-shadow-[0_0_20px_rgba(159,18,57,0.8)]">
                 Collapse!
               </h2>
               <p className="text-lg mb-6 leading-relaxed text-slate-300">
@@ -366,19 +367,19 @@ function App() {
               </div>
 
               {/* Ultimate Forfeit Card */}
-              <div className="w-full bg-gradient-to-br from-red-950/40 to-slate-900 border border-red-500/30 rounded-3xl p-6 mb-8 shadow-[0_0_30px_rgba(239,68,68,0.15)] relative overflow-hidden">
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 bg-red-500 text-white text-[10px] font-black uppercase tracking-[0.2em] px-3 py-1 rounded-b-lg">
+              <div className="w-full bg-gradient-to-br from-rose-950/60 to-slate-900/80 border border-rose-900/50 rounded-3xl p-6 mb-8 shadow-[0_0_30px_rgba(159,18,57,0.2)] relative overflow-hidden">
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 bg-rose-900 border-x border-b border-rose-800 text-rose-200 text-[10px] font-black uppercase tracking-[0.2em] px-3 py-1 rounded-b-lg">
                   Ultimate Forfeit
                 </div>
                 
-                <p className="text-xl font-bold text-red-100 mt-4 mb-6 leading-snug">
+                <p className="text-xl font-bold text-rose-200 mt-4 mb-6 leading-snug">
                   {forfeitText}
                 </p>
 
                 <div className="flex flex-col sm:flex-row gap-3">
                   <button
                     onClick={rollForfeit}
-                    className="flex-1 flex items-center justify-center gap-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 py-3 rounded-xl font-bold transition-all active:scale-95 text-sm uppercase tracking-wider"
+                    className="flex-1 flex items-center justify-center gap-2 bg-rose-900/40 hover:bg-rose-900/60 text-rose-200 border border-rose-800 py-3 rounded-xl font-bold transition-all active:scale-95 text-sm uppercase tracking-wider"
                   >
                     <RefreshCw className="w-4 h-4" /> Reroll
                   </button>
@@ -387,7 +388,7 @@ function App() {
                       setCustomForfeitInput('');
                       setShowCustomForfeit(true);
                     }}
-                    className="flex-1 flex items-center justify-center gap-2 bg-slate-800/50 hover:bg-slate-700/50 text-slate-300 border border-slate-700 py-3 rounded-xl font-bold transition-all active:scale-95 text-sm uppercase tracking-wider"
+                    className="flex-1 flex items-center justify-center gap-2 bg-rose-950/20 hover:bg-rose-900/40 text-rose-200 border border-rose-800 py-3 rounded-xl font-bold transition-all active:scale-95 text-sm uppercase tracking-wider"
                   >
                     Custom
                   </button>
@@ -406,15 +407,15 @@ function App() {
                       initial={{ scale: 0.9, y: 20 }}
                       animate={{ scale: 1, y: 0 }}
                       exit={{ scale: 0.9, y: 20 }}
-                      className="w-full max-w-sm bg-[#0d0f17] border border-slate-700 rounded-3xl p-6 shadow-2xl flex flex-col gap-4"
+                      className="w-full max-w-sm bg-slate-900 border border-rose-900/50 rounded-3xl p-6 shadow-2xl flex flex-col gap-4"
                     >
-                      <h3 className="text-xl font-black text-white uppercase tracking-wider mb-2">Custom Forfeit</h3>
+                      <h3 className="text-xl font-black text-rose-200 uppercase tracking-wider mb-2">Custom Forfeit</h3>
                       <input
                         type="text"
                         value={customForfeitInput}
                         onChange={(e) => setCustomForfeitInput(e.target.value)}
                         placeholder="Enter custom forfeit..."
-                        className="w-full bg-slate-900 border border-slate-700 text-white px-4 py-3 rounded-xl focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 placeholder-slate-500 transition-all font-medium"
+                        className="w-full bg-slate-900/80 border border-rose-800/80 text-rose-100 px-4 py-3 rounded-xl focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 placeholder-rose-900/70 transition-all font-medium"
                         autoFocus
                         onKeyDown={(e) => {
                           if (e.key === 'Enter' && customForfeitInput.trim()) {
@@ -426,7 +427,7 @@ function App() {
                       <div className="flex gap-3 mt-2">
                         <button
                           onClick={() => setShowCustomForfeit(false)}
-                          className="flex-1 py-3 rounded-xl font-bold text-slate-300 bg-slate-800 hover:bg-slate-700 transition-colors uppercase tracking-wider text-sm"
+                          className="flex-1 py-3 rounded-xl font-bold text-rose-200 bg-rose-950/30 border border-rose-800 hover:bg-rose-900 hover:border-rose-700 transition-colors uppercase tracking-wider text-sm"
                         >
                           Cancel
                         </button>
@@ -437,7 +438,7 @@ function App() {
                               setShowCustomForfeit(false);
                             }
                           }}
-                          className="flex-1 py-3 rounded-xl font-bold text-white bg-gradient-to-r from-rose-500 to-purple-600 hover:brightness-110 transition-all uppercase tracking-wider text-sm shadow-[0_0_15px_rgba(225,29,72,0.4)]"
+                          className="flex-1 py-3 rounded-xl font-bold text-white border border-transparent bg-rose-600 hover:bg-rose-500 transition-all uppercase tracking-wider text-sm shadow-[0_0_15px_rgba(225,29,72,0.4)]"
                         >
                           Confirm
                         </button>
@@ -450,7 +451,7 @@ function App() {
               <div className="w-full flex flex-col gap-4">
                 <button
                   onClick={handleResetGame}
-                  className="w-full flex justify-center items-center gap-3 bg-gradient-to-r from-rose-500 to-purple-600 text-white px-8 py-5 rounded-2xl font-black text-xl hover:brightness-110 transition-all active:scale-95 shadow-[0_0_30px_rgba(225,29,72,0.5)] uppercase tracking-widest"
+                  className="w-full flex justify-center items-center gap-3 bg-gradient-to-r from-rose-500 to-rose-700 border border-rose-400 hover:from-rose-400 hover:to-rose-600 text-white px-8 py-5 rounded-2xl font-black text-xl transition-all active:scale-95 shadow-[0_0_30px_rgba(225,29,72,0.4)] hover:shadow-[0_0_40px_rgba(225,29,72,0.6)] uppercase tracking-widest"
                 >
                   <RefreshCw className="w-6 h-6" />
                   Play Again

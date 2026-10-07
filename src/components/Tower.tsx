@@ -263,15 +263,15 @@ function PhysicsBlock({ block, onPullBlock, isCollapsed, onCollapse, pullCount, 
       <boxGeometry args={size as [number, number, number]} />
       <meshStandardMaterial 
         color={baseColor}
-        emissive={isHovered ? accentColor : '#000000'}
-        emissiveIntensity={isHovered ? (theme === 'natural' ? 0.4 : 0.2) : 0}
+        emissive={isHovered ? (theme === 'natural' ? '#ffffff' : accentColor) : '#000000'}
+        emissiveIntensity={isHovered ? (theme === 'natural' ? 0.15 : 0.2) : 0}
         roughness={0.85}
         metalness={0.0}
       />
       <Edges 
         scale={1.001} 
-        color={isHovered ? (theme === 'natural' ? accentColor : "#ffffff") : "#000000"} 
-        opacity={isHovered ? 0.8 : (theme === 'natural' ? 0.1 : 0.2)} 
+        color={isHovered ? '#ffffff' : '#000000'} 
+        opacity={isHovered ? (theme === 'natural' ? 0.4 : 0.8) : (theme === 'natural' ? 0.1 : 0.2)} 
         transparent 
       />
     </mesh>
@@ -284,7 +284,7 @@ export function Tower({ blocks, onPullBlock, isCollapsed, onCollapse, isDareActi
   const controlsRef = useRef<any>(null);
   
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
-  const cameraZ = isMobile ? 16 : 14;
+  const cameraZ = isMobile ? 20 : 18;
 
   return (
     <div className="w-full h-full absolute inset-0 touch-none">
@@ -301,9 +301,9 @@ export function Tower({ blocks, onPullBlock, isCollapsed, onCollapse, isDareActi
         </div>
       )}
 
-      <Canvas shadows camera={{ position: [14, 12, cameraZ], fov: 35 }}>
-        <color attach="background" args={['#05050f']} />
-        <fog attach="fog" args={['#05050f', 15, 35]} />
+      <Canvas shadows camera={{ position: [15, 13, cameraZ], fov: 35 }}>
+        <color attach="background" args={['#0f0407']} />
+        <fog attach="fog" args={['#0f0407', 15, 35]} />
         
         {/* Cinematic Lighting Setup */}
         <ambientLight intensity={0.4} />
@@ -318,8 +318,8 @@ export function Tower({ blocks, onPullBlock, isCollapsed, onCollapse, isDareActi
           shadow-camera-bottom={-10}
         />
         {/* Rim lights for glowing edges */}
-        <spotLight position={[-15, 10, -15]} intensity={2.0} color="#ec4899" angle={0.5} penumbra={1} />
-        <spotLight position={[15, -5, -15]} intensity={1.5} color="#8b5cf6" angle={0.8} penumbra={1} />
+        <spotLight position={[-15, 10, -15]} intensity={2.0} color="#e11d48" angle={0.5} penumbra={1} />
+        <spotLight position={[15, -5, -15]} intensity={1.5} color="#be123c" angle={0.8} penumbra={1} />
         
         {/* Physics Engine with custom iterations for stability */}
         <Physics 
@@ -359,7 +359,7 @@ export function Tower({ blocks, onPullBlock, isCollapsed, onCollapse, isDareActi
           maxPolarAngle={Math.PI / 2 + 0.1}
           minDistance={15}
           maxDistance={30}
-          target={[0, 4.5, 0]}
+          target={[0, 5.5, 0]}
           onChange={() => {
             if (!hasInteracted) setHasInteracted(true);
           }}

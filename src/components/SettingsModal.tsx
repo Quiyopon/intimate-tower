@@ -85,31 +85,23 @@ export function SettingsModal({
     showToast("Forfeit added successfully!");
   };
 
-  const getTierStyles = (tier: Tier, isActive: boolean = true) => {
-    const color = activeColors[tier] || '#ffffff';
-    if (!isActive) return { container: {}, track: {}, thumb: {} };
-
-    const r = parseInt(color.slice(1, 3), 16) || 0;
-    const g = parseInt(color.slice(3, 5), 16) || 0;
-    const b = parseInt(color.slice(5, 7), 16) || 0;
-    const luma = (r * 299 + g * 587 + b * 114) / 1000;
+  const getTierStyles = (tier: Tier, isActive: boolean) => {
+    if (!isActive) return {};
     
-    // If the color is too dark (e.g. #1A1A1A), invert the container text/borders to remain visible
-    const isDark = luma < 50;
-
+    // Deep velvet UI for settings menu toggles
     return {
       container: { 
-        color: isDark ? '#e2e8f0' : color, 
-        backgroundColor: isDark ? '#1e293b' : `${color}1A`, 
-        borderColor: isDark ? '#334155' : `${color}66` 
+        color: '#fff1f2', // rose-50
+        backgroundColor: '#4c0519', // rose-950
+        borderColor: '#881337' // rose-900
       },
       track: { 
-        backgroundColor: isDark ? '#0f172a' : `${color}33`, 
-        borderColor: isDark ? '#334155' : `${color}4D` 
+        backgroundColor: '#2a0410', // extremely dark red
+        borderColor: '#881337' 
       },
       thumb: { 
-        backgroundColor: color,
-        border: isDark ? '1px solid #475569' : 'none'
+        backgroundColor: '#f43f5e', // rose-500 (10% Accent)
+        border: '1px solid #fb7185' // rose-400
       }
     };
   };
@@ -135,14 +127,14 @@ export function SettingsModal({
           </button>
         </div>
 
-        <div className="flex px-4 pt-4 bg-[#0d0f17] z-20 relative border-b border-slate-800 gap-2">
+        <div className="flex px-4 pt-4 bg-slate-900 z-20 relative border-b border-slate-800 gap-2">
           {(['tiers', 'prompts', 'game'] as const).map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
               className={`px-4 py-3 text-sm font-bold uppercase tracking-wider rounded-t-xl transition-all flex-1 ${
                 activeTab === tab 
-                  ? 'bg-slate-800 text-pink-400 border-t-2 border-pink-500' 
+                  ? 'bg-rose-950/20 text-rose-200 border-t-2 border-rose-800' 
                   : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 border-t-2 border-transparent'
               }`}
             >
@@ -176,20 +168,7 @@ export function SettingsModal({
                 Toggle which tiers of dares are included in the game. Note: If a tier is disabled, pulling its block does nothing but increase instability.
               </p>
               
-              {/* Theme Selector */}
-              <div className="flex gap-2 p-1 bg-slate-800 rounded-xl mb-4">
-                {(['natural', 'classic', 'monochrome', 'custom'] as const).map(t => (
-                  <button
-                    key={t}
-                    onClick={() => setTheme(t)}
-                    className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all ${
-                      theme === t ? 'bg-slate-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'
-                    }`}
-                  >
-                    {t}
-                  </button>
-                ))}
-              </div>
+
 
               {(['tier1', 'tier2', 'tier3', 'tier4'] as Tier[]).map(tier => {
                 const isActive = tierToggles[tier];
@@ -244,7 +223,7 @@ export function SettingsModal({
 
           {activeTab === 'prompts' && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
-              <div className="bg-slate-800/50 rounded-3xl p-5 border border-slate-700">
+              <div className="bg-transparent rounded-3xl border border-slate-800 p-5">
                 <h3 className="font-bold mb-4 text-white uppercase tracking-wider text-sm">Add Custom Prompt</h3>
                 <textarea
                   value={newPromptText}
@@ -287,7 +266,7 @@ export function SettingsModal({
                 <button
                   onClick={handleAddPrompt}
                   disabled={!newPromptText.trim()}
-                  className="w-full mt-5 bg-gradient-to-r from-pink-500 to-purple-600 disabled:from-slate-700 disabled:to-slate-800 disabled:text-slate-500 hover:brightness-110 text-white font-black py-4 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95 uppercase tracking-wider shadow-lg"
+                  className="w-full mt-5 bg-rose-600 border border-transparent disabled:bg-slate-800 disabled:border-slate-800 disabled:text-slate-600 hover:bg-rose-500 text-white font-black py-4 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95 uppercase tracking-wider shadow-[0_0_15px_rgba(225,29,72,0.2)] disabled:shadow-none"
                 >
                   <Plus className="w-5 h-5" /> Add Prompt
                 </button>
@@ -303,11 +282,11 @@ export function SettingsModal({
 
                 {/* Filters */}
                 <div className="flex overflow-x-auto gap-2 mb-4 pb-2 hide-scrollbar">
-                  <button onClick={() => { setPromptFilter('all'); setPromptPage(1); }} className={`min-h-[44px] px-4 rounded-full text-xs font-bold whitespace-nowrap transition-colors ${promptFilter === 'all' ? 'bg-pink-500 text-white' : 'bg-slate-800 text-slate-400'}`}>All</button>
-                  <button onClick={() => { setPromptFilter('tier1'); setPromptPage(1); }} className={`min-h-[44px] px-4 rounded-full text-xs font-bold whitespace-nowrap transition-colors ${promptFilter === 'tier1' ? 'bg-amber-500 text-white' : 'bg-slate-800 text-slate-400'}`}>Level 1</button>
-                  <button onClick={() => { setPromptFilter('tier2'); setPromptPage(1); }} className={`min-h-[44px] px-4 rounded-full text-xs font-bold whitespace-nowrap transition-colors ${promptFilter === 'tier2' ? 'bg-orange-500 text-white' : 'bg-slate-800 text-slate-400'}`}>Level 2</button>
-                  <button onClick={() => { setPromptFilter('tier3'); setPromptPage(1); }} className={`min-h-[44px] px-4 rounded-full text-xs font-bold whitespace-nowrap transition-colors ${promptFilter === 'tier3' ? 'bg-red-500 text-white' : 'bg-slate-800 text-slate-400'}`}>Level 3</button>
-                  <button onClick={() => { setPromptFilter('tier4'); setPromptPage(1); }} className={`min-h-[44px] px-4 rounded-full text-xs font-bold whitespace-nowrap transition-colors ${promptFilter === 'tier4' ? 'bg-pink-500 text-white' : 'bg-slate-800 text-slate-400'}`}>Level 4</button>
+                  <button onClick={() => { setPromptFilter('all'); setPromptPage(1); }} className={`min-h-[44px] px-4 rounded-full text-xs font-bold whitespace-nowrap transition-colors ${promptFilter === 'all' ? 'bg-rose-600 text-white border border-transparent' : 'bg-slate-800 text-slate-400 hover:bg-slate-700 border border-transparent'}`}>All</button>
+                  <button onClick={() => { setPromptFilter('tier1'); setPromptPage(1); }} className={`min-h-[44px] px-4 rounded-full text-xs font-bold whitespace-nowrap transition-colors ${promptFilter === 'tier1' ? 'bg-rose-600 text-white border border-transparent' : 'bg-slate-800 text-slate-400 hover:bg-slate-700 border border-transparent'}`}>Level 1</button>
+                  <button onClick={() => { setPromptFilter('tier2'); setPromptPage(1); }} className={`min-h-[44px] px-4 rounded-full text-xs font-bold whitespace-nowrap transition-colors ${promptFilter === 'tier2' ? 'bg-rose-600 text-white border border-transparent' : 'bg-slate-800 text-slate-400 hover:bg-slate-700 border border-transparent'}`}>Level 2</button>
+                  <button onClick={() => { setPromptFilter('tier3'); setPromptPage(1); }} className={`min-h-[44px] px-4 rounded-full text-xs font-bold whitespace-nowrap transition-colors ${promptFilter === 'tier3' ? 'bg-rose-600 text-white border border-transparent' : 'bg-slate-800 text-slate-400 hover:bg-slate-700 border border-transparent'}`}>Level 3</button>
+                  <button onClick={() => { setPromptFilter('tier4'); setPromptPage(1); }} className={`min-h-[44px] px-4 rounded-full text-xs font-bold whitespace-nowrap transition-colors ${promptFilter === 'tier4' ? 'bg-rose-600 text-white border border-transparent' : 'bg-slate-800 text-slate-400 hover:bg-slate-700 border border-transparent'}`}>Level 4</button>
                 </div>
 
                 <div className="space-y-2">
@@ -321,7 +300,7 @@ export function SettingsModal({
                         {paginated.map(prompt => {
                           const styles = getTierStyles(prompt.tier, true);
                           return (
-                            <div key={prompt.id} className="bg-slate-800/80 p-4 rounded-2xl flex items-start gap-3 border border-slate-700/50">
+                            <div key={prompt.id} className="group p-4 rounded-2xl flex items-start gap-3 border border-slate-800 hover:border-slate-700 transition-colors bg-transparent">
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 mb-2">
                                   <span 
@@ -331,16 +310,16 @@ export function SettingsModal({
                                     {prompt.tier.replace('tier', 'Lvl ')}
                                   </span>
                                   {prompt.isTimed && (
-                                    <span className="text-[10px] text-slate-300 font-bold bg-slate-900 border border-slate-700 px-2 py-0.5 rounded">
+                                    <span className="text-[10px] text-slate-400 font-bold bg-slate-800/50 border border-slate-700 px-2 py-0.5 rounded">
                                       {prompt.timeSeconds}s
                                     </span>
                                   )}
                                 </div>
-                                <p className="text-sm text-slate-200" title={prompt.text}>{prompt.text}</p>
+                                <p className="text-sm text-slate-300 leading-relaxed" title={prompt.text}>{prompt.text}</p>
                               </div>
                               <button
                                 onClick={() => onDeletePrompt(prompt.id)}
-                                className="bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl transition-colors shrink-0"
+                                className="text-slate-600 hover:bg-red-500 hover:text-white min-w-[40px] min-h-[40px] flex items-center justify-center rounded-xl transition-all shrink-0 opacity-50 group-hover:opacity-100"
                                 aria-label="Delete prompt"
                               >
                                 <Trash2 className="w-4 h-4" />
@@ -426,12 +405,12 @@ export function SettingsModal({
                     onChange={(e) => setNewForfeitText(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleAddForfeit()}
                     placeholder="Enter a new forfeit..."
-                    className="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 min-h-[44px] text-sm text-white placeholder-slate-500 focus:outline-none focus:border-pink-500 transition-colors"
+                    className="flex-1 bg-transparent border border-slate-700 rounded-xl px-4 min-h-[44px] text-sm text-white placeholder-slate-500 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition-colors"
                   />
                   <button
                     onClick={handleAddForfeit}
                     disabled={!newForfeitText.trim()}
-                    className="bg-pink-500 hover:bg-pink-600 disabled:opacity-50 disabled:hover:bg-pink-500 text-white min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center transition-all active:scale-95"
+                    className="bg-rose-600 hover:bg-rose-500 border border-transparent disabled:bg-slate-800 disabled:border-slate-800 disabled:text-slate-600 text-white min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center transition-all active:scale-95 shadow-[0_0_10px_rgba(225,29,72,0.2)] disabled:shadow-none"
                     aria-label="Add forfeit"
                   >
                     <Plus className="w-5 h-5" />
@@ -443,11 +422,11 @@ export function SettingsModal({
                     <p className="text-sm text-slate-500 text-center py-4">No forfeits defined.</p>
                   ) : (
                     forfeits.map((forfeit, idx) => (
-                      <div key={idx} className="bg-slate-900/50 p-3 rounded-xl flex items-start justify-between gap-3 border border-slate-800">
+                      <div key={idx} className="group bg-transparent p-3 rounded-xl flex items-start justify-between gap-3 border border-slate-800 hover:border-slate-700 transition-colors">
                         <p className="text-sm text-slate-300 flex-1 pt-1 leading-relaxed">{forfeit}</p>
                         <button
                           onClick={() => onDeleteForfeit(forfeit)}
-                          className="bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg transition-colors shrink-0"
+                          className="text-slate-600 hover:bg-red-500 hover:text-white min-w-[40px] min-h-[40px] flex items-center justify-center rounded-lg transition-all shrink-0 opacity-50 group-hover:opacity-100"
                           aria-label="Delete forfeit"
                         >
                           <Trash2 className="w-4 h-4" />
