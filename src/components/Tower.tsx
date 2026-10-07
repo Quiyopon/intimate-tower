@@ -54,29 +54,44 @@ function PhysicsBlock({ block, onPullBlock, isCollapsed, onCollapse, pullCount }
   const offset = block.position - 1;
   
   // Introduce realistic imperfections to break perfect mathematical balance
-  const { jitterX, jitterZ, jitterRot, randMass } = useMemo(() => ({
-    jitterX: (Math.random() - 0.5) * 0.06,
-    jitterZ: (Math.random() - 0.5) * 0.06,
-    jitterRot: (Math.random() - 0.5) * 0.04,
-    randMass: 1.0 + (Math.random() * 0.2), // Mass varies slightly
+  const { jitterX, jitterZ, jitterRot } = useMemo(() => ({
+    jitterX: (Math.random() - 0.5) * 0.01,
+    jitterZ: (Math.random() - 0.5) * 0.01,
+    jitterRot: (Math.random() - 0.5) * 0.02,
   }), []);
 
   const initialPos = isVertical 
-    ? [offset * 1.0 + jitterX, (block.layer * BLOCK_H) + (BLOCK_H / 2), jitterZ]
-    : [jitterX, (block.layer * BLOCK_H) + (BLOCK_H / 2), offset * 1.0 + jitterZ];
+    ? [offset * 1.0 + jitterX, (block.layer * (BLOCK_H + 0.002)) + (BLOCK_H / 2), jitterZ]
+    : [jitterX, (block.layer * (BLOCK_H + 0.002)) + (BLOCK_H / 2), offset * 1.0 + jitterZ];
 
   const [ref, api] = useBox(() => ({
-    mass: randMass, 
+    mass: 1.0, 
     args: size as [number, number, number],
     position: initialPos as [number, number, number],
     rotation: [0, jitterRot, 0],
-    material: { friction: 0.15, restitution: 0.02 }, // Lowered friction significantly so they slide easier when unbalanced
-    linearDamping: 0.01, // Near zero damping
-    angularDamping: 0.05, 
+    material: { friction: 0.15, restitution: 0.0 },
+    linearDamping: 0.1,
+    angularDamping: 0.2, 
     fixedRotation: false,
     allowSleep: false,
     sleepState: 0, // 0 = AWAKE
   }));
+
+  // Settle-on-spawn routine to zero out velocity for first 30 frames
+  useEffect(() => {
+    let frameCount = 0;
+    let raf: number;
+    const settle = () => {
+      api.velocity.set(0, 0, 0);
+      api.angularVelocity.set(0, 0, 0);
+      frameCount++;
+      if (frameCount < 30) {
+        raf = requestAnimationFrame(settle);
+      }
+    };
+    raf = requestAnimationFrame(settle);
+    return () => cancelAnimationFrame(raf);
+  }, [api]);
 
   // Force wake up when a block is pulled
   useEffect(() => {
@@ -202,12 +217,12 @@ export function Tower({ blocks, onPullBlock, isCollapsed, onCollapse }: TowerPro
         
         {/* Physics Engine with custom iterations for stability */}
         <Physics 
-          iterations={40} // Lowered slightly so instability resolves faster
+          iterations={20} // Set solver iterations higher for stability
           gravity={[0, -18, 0]} // Harsher gravity
           allowSleep={false}
           defaultContactMaterial={{
             friction: 0.15,
-            restitution: 0.02,
+            restitution: 0.0,
             contactEquationStiffness: 1e7,
             contactEquationRelaxation: 4
           }}
