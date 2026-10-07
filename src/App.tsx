@@ -11,6 +11,8 @@ import type { Block, Tier, Prompt } from './types';
 import { calculatePhysics } from './utils/gameLogic';
 import { AnimatePresence, motion } from 'framer-motion';
 
+let isInputLocked = false;
+
 function App() {
   const {
     gameState,
@@ -98,6 +100,8 @@ function App() {
   };
 
   const handlePullBlock = (block: Block) => {
+    if (isInputLocked) return;
+    isInputLocked = true;
 
     // Mark block as removed
     const newBlocks = gameState.blocks.map((b: Block) => 
@@ -115,6 +119,7 @@ function App() {
         instability,
         currentPlayerIndex: (gameState.currentPlayerIndex + 1) % gameState.players.length,
       });
+      isInputLocked = false;
       return;
     }
 
@@ -125,6 +130,7 @@ function App() {
         blocks: newBlocks,
         currentPlayerIndex: (gameState.currentPlayerIndex + 1) % gameState.players.length,
       });
+      isInputLocked = false;
       return;
     }
 
@@ -153,6 +159,7 @@ function App() {
       currentPlayerIndex: (gameState.currentPlayerIndex + 1) % gameState.players.length,
       players: updatedPlayers,
     });
+    isInputLocked = false;
   };
 
   const handlePassPrompt = () => {
@@ -164,6 +171,7 @@ function App() {
       currentPlayerIndex: (gameState.currentPlayerIndex + 1) % gameState.players.length,
       players: updatedPlayers,
     });
+    isInputLocked = false;
   };
 
   const toggleTier = (tier: Tier) => {
@@ -193,12 +201,14 @@ function App() {
   const handleResetGame = () => {
     setShowCollapseModal(false);
     resetGame();
+    isInputLocked = false;
   };
 
   const handleBackToSetup = () => {
     setShowCollapseModal(false);
     resetGame();
     updateGameState({ gameStarted: false });
+    isInputLocked = false;
   };
 
   const blocksPulled = gameState.blocks.filter(b => b.isRemoved).length;
