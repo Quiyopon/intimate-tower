@@ -5,11 +5,26 @@ import { defaultPrompts } from '../data/defaultPrompts';
 
 const STORAGE_KEY = 'intimate-tower-state';
 const PROMPTS_KEY = 'intimate-tower-prompts';
+const FORFEITS_KEY = 'intimate-tower-forfeits';
+
+const defaultForfeits = [
+  "Loser must take a body shot off the winner.",
+  "Loser owes the winner a 10-minute massage right now.",
+  "Loser must let the winner text anyone in their phone.",
+  "Loser has to wear whatever the winner chooses for the rest of the night.",
+  "Loser must buy the next round of drinks or snacks.",
+  "Loser is at the winner's mercy for one custom dare."
+];
 
 export const useGameState = () => {
   const [prompts, setPrompts] = useState<Prompt[]>(() => {
     const saved = localStorage.getItem(PROMPTS_KEY);
     return saved ? JSON.parse(saved) : defaultPrompts;
+  });
+
+  const [forfeits, setForfeits] = useState<string[]>(() => {
+    const saved = localStorage.getItem(FORFEITS_KEY);
+    return saved ? JSON.parse(saved) : defaultForfeits;
   });
 
   const [gameState, setGameState] = useState<GameState>(() => {
@@ -53,6 +68,10 @@ export const useGameState = () => {
     localStorage.setItem(PROMPTS_KEY, JSON.stringify(prompts));
   }, [prompts]);
 
+  useEffect(() => {
+    localStorage.setItem(FORFEITS_KEY, JSON.stringify(forfeits));
+  }, [forfeits]);
+
   const updateGameState = (updates: Partial<GameState>) => {
     setGameState((prev: GameState) => ({ ...prev, ...updates }));
   };
@@ -64,7 +83,6 @@ export const useGameState = () => {
       isCollapsed: false,
       currentPlayerIndex: 0,
       activePrompt: null,
-      gameStarted: false,
       players: gameState.players.map(p => ({ ...p, passes: INITIAL_PASSES, score: 0 }))
     });
   };
@@ -79,6 +97,14 @@ export const useGameState = () => {
 
   const deletePrompt = (id: string) => {
     setPrompts((prev) => prev.filter((p) => p.id !== id));
+  };
+
+  const addForfeit = (forfeit: string) => {
+    setForfeits((prev) => [...prev, forfeit]);
+  };
+
+  const deleteForfeit = (forfeit: string) => {
+    setForfeits((prev) => prev.filter((f) => f !== forfeit));
   };
 
   const getRandomPrompt = (tier: Tier) => {
@@ -97,5 +123,8 @@ export const useGameState = () => {
     addPrompt,
     deletePrompt,
     getRandomPrompt,
+    forfeits,
+    addForfeit,
+    deleteForfeit,
   };
 };

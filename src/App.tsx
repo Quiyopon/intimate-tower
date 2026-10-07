@@ -23,6 +23,9 @@ function App() {
     addPrompt,
     deletePrompt,
     getRandomPrompt,
+    forfeits,
+    addForfeit,
+    deleteForfeit,
   } = useGameState();
 
   const [showSettings, setShowSettings] = useState(false);
@@ -108,15 +111,13 @@ function App() {
       b.id === block.id ? { ...b, isRemoved: true } : b
     );
 
-    // Calculate new instability
-    const { minMargin } = calculatePhysics(newBlocks);
-    const instability = Math.max(0, Math.min(100, 100 - (minMargin / 1.5) * 100));
+    // The tower's instability meter is now managed dynamically via physics subscriptions in Tower.tsx
+    // (InstabilityTracker component) to calculate real-time Center of Mass and tilt.
 
     // Check if tier is active
     if (!gameState.tierToggles[block.tier]) {
       updateGameState({
         blocks: newBlocks,
-        instability,
         currentPlayerIndex: (gameState.currentPlayerIndex + 1) % gameState.players.length,
       });
       isInputLocked = false;
@@ -139,7 +140,6 @@ function App() {
     setPendingPrompt(prompt);
     updateGameState({
       blocks: newBlocks,
-      instability,
     });
   };
 
@@ -185,16 +185,11 @@ function App() {
 
   const currentPlayer = gameState.players[gameState.currentPlayerIndex] || { name: 'Player', passes: 0 };
 
-  const forfeits = [
-    "Loser must take a body shot off the winner.",
-    "Loser owes the winner a 10-minute massage right now.",
-    "Loser must let the winner text anyone in their phone.",
-    "Loser has to wear whatever the winner chooses for the rest of the night.",
-    "Loser must buy the next round of drinks or snacks.",
-    "Loser is at the winner's mercy for one custom dare."
-  ];
-
   const rollForfeit = () => {
+    if (forfeits.length === 0) {
+      setForfeitText("Loser owes the winner a 10-minute massage right now.");
+      return;
+    }
     setForfeitText(forfeits[Math.floor(Math.random() * forfeits.length)]);
   };
 
@@ -236,6 +231,9 @@ function App() {
               onDeletePrompt={deletePrompt}
               onResetPrompts={resetPrompts}
               onResetGame={resetGame}
+              forfeits={forfeits}
+              onAddForfeit={addForfeit}
+              onDeleteForfeit={deleteForfeit}
             />
           )}
         </AnimatePresence>
@@ -252,6 +250,7 @@ function App() {
           blocks={gameState.blocks} 
           onPullBlock={handlePullBlock}
           isCollapsed={gameState.isCollapsed}
+          isDareActive={!!gameState.activePrompt}
           onCollapse={() => {
             if (gameState.isCollapsed) return;
             if (navigator.vibrate) navigator.vibrate([500, 100, 500, 100, 800]);
@@ -327,21 +326,18 @@ function App() {
         </div>
 
         {/* Instability Indicator */}
-        <div className={`absolute bottom-safe-8 bottom-8 left-1/2 -translate-x-1/2 w-72 text-center pointer-events-none z-10 ${gameState.instability > 70 ? 'animate-pulse' : ''}`}>
+        <div id="instability-container" className="absolute bottom-safe-8 bottom-8 left-1/2 -translate-x-1/2 w-72 text-center pointer-events-none z-10">
           <div className="flex justify-between items-end mb-2 px-2">
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Tower Instability</span>
-            <span className={`text-sm font-black ${gameState.instability > 70 ? 'text-red-400 animate-pulse drop-shadow-[0_0_8px_rgba(248,113,113,0.8)]' : 'text-slate-200'}`}>
-              {Math.round(gameState.instability)}%
+            <span id="instability-text" className="text-sm font-black text-slate-200">
+              0%
             </span>
           </div>
           <div className="h-3 bg-slate-900/80 backdrop-blur-md rounded-full overflow-hidden border border-slate-700/50 p-0.5 shadow-lg">
             <div 
-              className={`h-full rounded-full bg-gradient-to-r transition-all duration-500 ${
-                gameState.instability < 40 ? 'from-cyan-400 to-blue-500 shadow-[0_0_10px_rgba(34,211,238,0.8)]' : 
-                gameState.instability < 70 ? 'from-yellow-400 to-amber-500 shadow-[0_0_10px_rgba(250,204,21,0.8)]' : 
-                'from-pink-500 to-red-600 shadow-[0_0_15px_rgba(225,29,72,0.9)]'
-              }`}
-              style={{ width: `${gameState.instability}%` }}
+              id="instability-bar"
+              className="h-full rounded-full bg-gradient-to-r transition-colors duration-200 from-cyan-400 to-blue-500 shadow-[0_0_10px_rgba(34,211,238,0.8)]"
+              style={{ width: `0%` }}
             />
           </div>
         </div>
@@ -452,6 +448,9 @@ function App() {
               onDeletePrompt={deletePrompt}
               onResetPrompts={resetPrompts}
               onResetGame={resetGame}
+              forfeits={forfeits}
+              onAddForfeit={addForfeit}
+              onDeleteForfeit={deleteForfeit}
             />
           </div>
         )}
