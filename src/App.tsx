@@ -7,7 +7,7 @@ import { TitleScreen } from './components/TitleScreen';
 import { useGameState } from './hooks/useGameState';
 import { initAudio, setMuted, startHeartbeatLoop, stopHeartbeatLoop, startAmbientMusic, stopAmbientMusic, setAmbientDucked } from './utils/audio';
 import { Volume2, VolumeX, Heart } from 'lucide-react';
-import type { Block, Tier, Prompt } from './types';
+import type { Block, Tier } from './types';
 
 import { AnimatePresence, motion } from 'framer-motion';
 
