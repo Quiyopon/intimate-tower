@@ -25,6 +25,10 @@ function App() {
 
   const [showSettings, setShowSettings] = useState(false);
   const [isMutedState, setIsMutedState] = useState(false);
+  const [showCollapseModal, setShowCollapseModal] = useState(false);
+  const [forfeitText, setForfeitText] = useState('');
+  const [pendingPrompt, setPendingPrompt] = useState<Prompt | null>(null);
+  const [isSettling, setIsSettling] = useState(false);
 
   // Sync ambient music and heartbeat based on game state
   useEffect(() => {
@@ -61,6 +65,27 @@ function App() {
     };
   }, [isMutedState]);
 
+  // Handle settling delay before showing prompt
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>;
+    if (isSettling && pendingPrompt && !gameState.isCollapsed) {
+      timer = setTimeout(() => {
+        setIsSettling(false);
+        updateGameState({ activePrompt: pendingPrompt });
+        setPendingPrompt(null);
+      }, 2000); // 2 second settle time
+    }
+    return () => clearTimeout(timer);
+  }, [isSettling, pendingPrompt, gameState.isCollapsed]);
+
+  // Cancel prompt if collapsed during settling
+  useEffect(() => {
+    if (gameState.isCollapsed && isSettling) {
+      setIsSettling(false);
+      setPendingPrompt(null);
+    }
+  }, [gameState.isCollapsed, isSettling]);
+
   const toggleMute = () => {
     const newState = !isMutedState;
     setMuted(newState);
@@ -73,6 +98,7 @@ function App() {
   };
 
   const handlePullBlock = (block: Block) => {
+
     // Mark block as removed
     const newBlocks = gameState.blocks.map((b: Block) => 
       b.id === block.id ? { ...b, isRemoved: true } : b
@@ -102,11 +128,12 @@ function App() {
       return;
     }
 
-    // Show prompt modal
+    // Set settling state
+    setIsSettling(true);
+    setPendingPrompt(prompt);
     updateGameState({
       blocks: newBlocks,
       instability,
-      activePrompt: prompt,
     });
   };
 
@@ -150,6 +177,33 @@ function App() {
 
   const currentPlayer = gameState.players[gameState.currentPlayerIndex] || { name: 'Player', passes: 0 };
 
+  const forfeits = [
+    "Loser must take a body shot off the winner.",
+    "Loser owes the winner a 10-minute massage right now.",
+    "Loser must let the winner text anyone in their phone.",
+    "Loser has to wear whatever the winner chooses for the rest of the night.",
+    "Loser must buy the next round of drinks or snacks.",
+    "Loser is at the winner's mercy for one custom dare."
+  ];
+
+  const rollForfeit = () => {
+    setForfeitText(forfeits[Math.floor(Math.random() * forfeits.length)]);
+  };
+
+  const handleResetGame = () => {
+    setShowCollapseModal(false);
+    resetGame();
+  };
+
+  const handleBackToSetup = () => {
+    setShowCollapseModal(false);
+    resetGame();
+    updateGameState({ gameStarted: false });
+  };
+
+  const blocksPulled = gameState.blocks.filter(b => b.isRemoved).length;
+  const roundsSurvived = Math.floor(blocksPulled / Math.max(1, gameState.players.length));
+
   if (!gameState.gameStarted) {
     return (
       <div className="min-h-screen bg-slate-950 text-slate-100 font-sans overflow-hidden">
@@ -180,51 +234,72 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans overflow-hidden">
+    <div className="fixed inset-0 bg-[#05050f] text-slate-100 flex flex-col font-sans overflow-hidden touch-none select-none">
+      
+      {/* 3D Canvas Background */}
+      <div className={`absolute inset-0 z-0 ${gameState.isCollapsed && !showCollapseModal ? 'animate-[shake_0.1s_ease-in-out_infinite]' : ''}`}>
+        <Tower 
+          blocks={gameState.blocks} 
+          onPullBlock={handlePullBlock}
+          isCollapsed={gameState.isCollapsed}
+          onCollapse={() => {
+            if (gameState.isCollapsed) return;
+            if (navigator.vibrate) navigator.vibrate([500, 100, 500, 100, 800]);
+            updateGameState({ isCollapsed: true, instability: 100 });
+            rollForfeit();
+            setTimeout(() => {
+              setShowCollapseModal(true);
+            }, 1500);
+          }}
+        />
+      </div>
+
       {/* Header */}
-      <header className="flex items-center justify-between p-4 z-10 relative">
-        <div className="flex items-center gap-2">
+      <header className="flex items-center justify-between p-4 pt-safe z-10 relative bg-gradient-to-b from-[#05050f] to-transparent pb-10 pointer-events-none">
+        <div className="flex items-center gap-2 pointer-events-auto">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-rose-500 to-purple-600 flex items-center justify-center font-bold shadow-lg">
             IT
           </div>
-          <h1 className="font-bold text-xl tracking-tight">Intimate Tower</h1>
+          <h1 className="font-bold text-xl tracking-tight text-white drop-shadow-md">Intimate Tower</h1>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 pointer-events-auto">
           <button 
             onClick={toggleMute}
-            className="p-2 text-rose-200 hover:text-rose-100 hover:bg-white/10 rounded-full transition-colors"
+            className="p-2.5 text-rose-200 hover:text-white bg-slate-900/50 backdrop-blur-md border border-slate-700/50 hover:bg-slate-800 rounded-full transition-colors shadow-lg"
           >
             {isMutedState ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
           </button>
           <button 
             onClick={() => setShowSettings(true)}
-            className="p-2 text-rose-200 hover:text-rose-100 hover:bg-white/10 rounded-full transition-colors"
+            className="p-2.5 text-rose-200 hover:text-white bg-slate-900/50 backdrop-blur-md border border-slate-700/50 hover:bg-slate-800 rounded-full transition-colors shadow-lg"
           >
             <Settings className="w-5 h-5" />
           </button>
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="flex-1 flex flex-col relative z-0">
-        <div className="flex justify-center gap-4 mt-4 px-4 overflow-x-auto pb-2 z-10 relative">
+      {/* Main Content Overlay UI */}
+      <main className="flex-1 flex flex-col relative z-10 pointer-events-none">
+        
+        {/* Player Cards */}
+        <div className="flex justify-center gap-3 mt-2 px-4 overflow-x-auto pb-6 pt-2 pointer-events-auto">
           {gameState.players.map((p, i) => {
             const isCurrent = i === gameState.currentPlayerIndex;
             return (
               <div 
                 key={p.id}
-                className={`flex flex-col items-center px-4 py-2 rounded-xl border transition-all ${
+                className={`flex flex-col items-center px-5 py-2.5 rounded-2xl border transition-all duration-300 ${
                   isCurrent 
-                    ? 'border-rose-500 bg-rose-500/10 shadow-[0_0_15px_rgba(244,63,94,0.3)]' 
-                    : 'border-slate-800 bg-slate-900/50 opacity-50'
+                    ? 'border-pink-500 bg-pink-500/20 shadow-[0_0_20px_rgba(236,72,153,0.5)] scale-110 z-10' 
+                    : 'border-white/10 bg-white/10 scale-95'
                 }`}
               >
-                <div className={`text-sm font-bold ${isCurrent ? 'text-white' : 'text-slate-400'}`}>
+                <div className={`text-sm font-bold ${isCurrent ? 'text-white' : 'text-white/60'}`}>
                   {p.name}
                 </div>
                 <div className="flex items-center gap-1.5 mt-1">
-                  <Heart className={`w-4 h-4 ${p.score > 0 ? 'text-rose-500 fill-rose-500' : 'text-slate-600'}`} />
-                  <span className="text-xs font-black text-rose-200">
+                  <Heart className={`w-4 h-4 ${p.score > 0 ? (isCurrent ? 'text-pink-500 fill-pink-500' : 'text-pink-500/60 fill-pink-500/60') : 'text-white/20'}`} />
+                  <span className={`text-xs font-black ${isCurrent ? 'text-rose-200' : 'text-white/40'}`}>
                     {p.score > 0 ? `+${p.score}` : '0'}
                   </span>
                 </div>
@@ -233,25 +308,29 @@ function App() {
           })}
         </div>
 
-        <div className="flex-1 flex items-end justify-center overflow-hidden">
-          <Tower 
-            blocks={gameState.blocks} 
-            onPullBlock={handlePullBlock}
-            isCollapsed={gameState.isCollapsed}
-            isPaused={!!gameState.activePrompt}
-            onCollapse={() => {
-              if (navigator.vibrate) navigator.vibrate([300, 100, 300, 100, 500]);
-              updateGameState({ isCollapsed: true, instability: 100 });
-            }}
-          />
+        {/* Turn Banner */}
+        <div className="absolute top-[80px] left-0 w-full flex justify-center pointer-events-none z-10">
+          <div className="bg-slate-900/80 backdrop-blur-md border border-pink-500/30 px-6 py-2 rounded-full shadow-[0_0_20px_rgba(236,72,153,0.3)] animate-pulse">
+            <span className="text-pink-400 font-bold drop-shadow-[0_0_5px_rgba(236,72,153,0.8)]">{currentPlayer.name}'s Turn</span>
+            <span className="text-slate-300 ml-2">— Pull a block carefully</span>
+          </div>
         </div>
 
         {/* Instability Indicator */}
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-48 text-center">
-          <div className="text-xs text-slate-500 mb-1 font-bold uppercase tracking-wider">Tower Instability</div>
-          <div className="h-1.5 bg-slate-900 rounded-full overflow-hidden">
+        <div className={`absolute bottom-safe-8 bottom-8 left-1/2 -translate-x-1/2 w-72 text-center pointer-events-none z-10 ${gameState.instability > 70 ? 'animate-pulse' : ''}`}>
+          <div className="flex justify-between items-end mb-2 px-2">
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Tower Instability</span>
+            <span className={`text-sm font-black ${gameState.instability > 70 ? 'text-red-400 animate-pulse drop-shadow-[0_0_8px_rgba(248,113,113,0.8)]' : 'text-slate-200'}`}>
+              {Math.round(gameState.instability)}%
+            </span>
+          </div>
+          <div className="h-3 bg-slate-900/80 backdrop-blur-md rounded-full overflow-hidden border border-slate-700/50 p-0.5 shadow-lg">
             <div 
-              className="h-full bg-gradient-to-r from-green-500 via-amber-500 to-red-500 transition-all duration-500"
+              className={`h-full rounded-full bg-gradient-to-r transition-all duration-500 ${
+                gameState.instability < 40 ? 'from-cyan-400 to-blue-500 shadow-[0_0_10px_rgba(34,211,238,0.8)]' : 
+                gameState.instability < 70 ? 'from-yellow-400 to-amber-500 shadow-[0_0_10px_rgba(250,204,21,0.8)]' : 
+                'from-pink-500 to-red-600 shadow-[0_0_15px_rgba(225,29,72,0.9)]'
+              }`}
               style={{ width: `${gameState.instability}%` }}
             />
           </div>
@@ -260,31 +339,76 @@ function App() {
 
       {/* Collapse Screen */}
       <AnimatePresence>
-        {gameState.isCollapsed && (
+        {showCollapseModal && (
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="fixed inset-0 z-40 bg-black/80 backdrop-blur-md flex items-center justify-center p-6 text-center"
+            className="fixed inset-0 z-40 bg-black/90 backdrop-blur-lg flex items-center justify-center p-6 text-center pointer-events-auto"
           >
             <motion.div 
-              initial={{ scale: 0.8, y: 50 }}
+              initial={{ scale: 0.9, y: 20 }}
               animate={{ scale: 1, y: 0 }}
-              transition={{ delay: 0.5, type: 'spring' }}
-              className="max-w-sm"
+              className="max-w-md w-full flex flex-col items-center"
             >
-              <h2 className="text-5xl font-black text-red-500 mb-4 tracking-tighter uppercase drop-shadow-2xl">
+              <h2 className="text-5xl sm:text-6xl font-black text-red-500 mb-2 tracking-tighter uppercase drop-shadow-[0_0_20px_rgba(239,68,68,0.8)]">
                 Collapse!
               </h2>
-              <p className="text-xl mb-8 leading-relaxed">
-                {currentPlayer.name} caused the tower to fall. The loser owes the ultimate forfeit!
+              <p className="text-lg mb-6 leading-relaxed text-slate-300">
+                <strong className="text-white text-xl">{currentPlayer.name}</strong> caused the tower to fall.
               </p>
-              <button
-                onClick={resetGame}
-                className="mx-auto flex items-center gap-2 bg-white text-black px-8 py-4 rounded-full font-bold text-lg hover:bg-gray-200 transition-transform active:scale-95"
-              >
-                <RefreshCw className="w-5 h-5" />
-                Play Again
-              </button>
+
+              {/* Stats */}
+              <div className="flex items-center justify-center gap-4 text-xs font-bold uppercase tracking-widest text-slate-400 mb-8 border border-slate-800 bg-slate-900/50 rounded-full px-5 py-2">
+                <span>Rounds: <span className="text-white">{roundsSurvived}</span></span>
+                <span className="w-1 h-1 rounded-full bg-slate-700" />
+                <span>Blocks: <span className="text-white">{blocksPulled}</span></span>
+              </div>
+
+              {/* Ultimate Forfeit Card */}
+              <div className="w-full bg-gradient-to-br from-red-950/40 to-slate-900 border border-red-500/30 rounded-3xl p-6 mb-8 shadow-[0_0_30px_rgba(239,68,68,0.15)] relative overflow-hidden">
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 bg-red-500 text-white text-[10px] font-black uppercase tracking-[0.2em] px-3 py-1 rounded-b-lg">
+                  Ultimate Forfeit
+                </div>
+                
+                <p className="text-xl font-bold text-red-100 mt-4 mb-6 leading-snug">
+                  {forfeitText}
+                </p>
+
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <button
+                    onClick={rollForfeit}
+                    className="flex-1 flex items-center justify-center gap-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 py-3 rounded-xl font-bold transition-all active:scale-95 text-sm uppercase tracking-wider"
+                  >
+                    <RefreshCw className="w-4 h-4" /> Reroll
+                  </button>
+                  <button
+                    onClick={() => {
+                      const custom = prompt("Enter a custom forfeit dare for the loser:");
+                      if (custom) setForfeitText(custom);
+                    }}
+                    className="flex-1 flex items-center justify-center gap-2 bg-slate-800/50 hover:bg-slate-700/50 text-slate-300 border border-slate-700 py-3 rounded-xl font-bold transition-all active:scale-95 text-sm uppercase tracking-wider"
+                  >
+                    Custom
+                  </button>
+                </div>
+              </div>
+
+              <div className="w-full flex flex-col gap-4">
+                <button
+                  onClick={handleResetGame}
+                  className="w-full flex justify-center items-center gap-3 bg-gradient-to-r from-rose-500 to-purple-600 text-white px-8 py-5 rounded-2xl font-black text-xl hover:brightness-110 transition-all active:scale-95 shadow-[0_0_30px_rgba(225,29,72,0.5)] uppercase tracking-widest"
+                >
+                  <RefreshCw className="w-6 h-6" />
+                  Play Again
+                </button>
+                
+                <button
+                  onClick={handleBackToSetup}
+                  className="text-slate-400 hover:text-white text-sm font-bold uppercase tracking-wider transition-colors py-2"
+                >
+                  Back to Setup / Change Players
+                </button>
+              </div>
             </motion.div>
           </motion.div>
         )}
@@ -293,29 +417,33 @@ function App() {
       {/* Card Modal */}
       <AnimatePresence>
         {gameState.activePrompt && !gameState.isCollapsed && (
-          <CardModal
-            prompt={gameState.activePrompt}
-            currentPlayer={currentPlayer.name}
-            passesAvailable={currentPlayer.passes}
-            onComplete={handleCompletePrompt}
-            onPass={handlePassPrompt}
-          />
+          <div className="fixed inset-0 z-50 pointer-events-auto">
+            <CardModal
+              prompt={gameState.activePrompt}
+              currentPlayer={currentPlayer.name}
+              passesAvailable={currentPlayer.passes}
+              onComplete={handleCompletePrompt}
+              onPass={handlePassPrompt}
+            />
+          </div>
         )}
       </AnimatePresence>
 
       {/* Settings Modal */}
       <AnimatePresence>
         {showSettings && (
-          <SettingsModal
-            onClose={() => setShowSettings(false)}
-            tierToggles={gameState.tierToggles}
-            onToggleTier={toggleTier}
-            prompts={prompts}
-            onAddPrompt={addPrompt}
-            onDeletePrompt={deletePrompt}
-            onResetPrompts={resetPrompts}
-            onResetGame={resetGame}
-          />
+          <div className="fixed inset-0 z-50 pointer-events-auto">
+            <SettingsModal
+              onClose={() => setShowSettings(false)}
+              tierToggles={gameState.tierToggles}
+              onToggleTier={toggleTier}
+              prompts={prompts}
+              onAddPrompt={addPrompt}
+              onDeletePrompt={deletePrompt}
+              onResetPrompts={resetPrompts}
+              onResetGame={resetGame}
+            />
+          </div>
         )}
       </AnimatePresence>
     </div>
