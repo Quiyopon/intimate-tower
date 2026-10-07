@@ -34,6 +34,8 @@ function App() {
   const [forfeitText, setForfeitText] = useState('');
   const [pendingPrompt, setPendingPrompt] = useState<Prompt | null>(null);
   const [isSettling, setIsSettling] = useState(false);
+  const [showCustomForfeit, setShowCustomForfeit] = useState(false);
+  const [customForfeitInput, setCustomForfeitInput] = useState('');
 
   // Sync ambient music and heartbeat based on game state
   useEffect(() => {
@@ -326,7 +328,7 @@ function App() {
         </div>
 
         {/* Instability Indicator */}
-        <div id="instability-container" className="absolute bottom-safe-8 bottom-8 left-1/2 -translate-x-1/2 w-72 text-center pointer-events-none z-10">
+        <div id="instability-container" className="absolute bottom-8 pb-6 left-1/2 -translate-x-1/2 w-72 text-center pointer-events-none z-10" style={{ paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}>
           <div className="flex justify-between items-end mb-2 px-2">
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Tower Instability</span>
             <span id="instability-text" className="text-sm font-black text-slate-200">
@@ -389,8 +391,8 @@ function App() {
                   </button>
                   <button
                     onClick={() => {
-                      const custom = prompt("Enter a custom forfeit dare for the loser:");
-                      if (custom) setForfeitText(custom);
+                      setCustomForfeitInput('');
+                      setShowCustomForfeit(true);
                     }}
                     className="flex-1 flex items-center justify-center gap-2 bg-slate-800/50 hover:bg-slate-700/50 text-slate-300 border border-slate-700 py-3 rounded-xl font-bold transition-all active:scale-95 text-sm uppercase tracking-wider"
                   >
@@ -398,6 +400,59 @@ function App() {
                   </button>
                 </div>
               </div>
+
+              <AnimatePresence>
+                {showCustomForfeit && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="absolute inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 pointer-events-auto"
+                  >
+                    <motion.div
+                      initial={{ scale: 0.9, y: 20 }}
+                      animate={{ scale: 1, y: 0 }}
+                      exit={{ scale: 0.9, y: 20 }}
+                      className="w-full max-w-sm bg-[#0d0f17] border border-slate-700 rounded-3xl p-6 shadow-2xl flex flex-col gap-4"
+                    >
+                      <h3 className="text-xl font-black text-white uppercase tracking-wider mb-2">Custom Forfeit</h3>
+                      <input
+                        type="text"
+                        value={customForfeitInput}
+                        onChange={(e) => setCustomForfeitInput(e.target.value)}
+                        placeholder="Enter custom forfeit..."
+                        className="w-full bg-slate-900 border border-slate-700 text-white px-4 py-3 rounded-xl focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 placeholder-slate-500 transition-all font-medium"
+                        autoFocus
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && customForfeitInput.trim()) {
+                            setForfeitText(customForfeitInput.trim());
+                            setShowCustomForfeit(false);
+                          }
+                        }}
+                      />
+                      <div className="flex gap-3 mt-2">
+                        <button
+                          onClick={() => setShowCustomForfeit(false)}
+                          className="flex-1 py-3 rounded-xl font-bold text-slate-300 bg-slate-800 hover:bg-slate-700 transition-colors uppercase tracking-wider text-sm"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (customForfeitInput.trim()) {
+                              setForfeitText(customForfeitInput.trim());
+                              setShowCustomForfeit(false);
+                            }
+                          }}
+                          className="flex-1 py-3 rounded-xl font-bold text-white bg-gradient-to-r from-rose-500 to-purple-600 hover:brightness-110 transition-all uppercase tracking-wider text-sm shadow-[0_0_15px_rgba(225,29,72,0.4)]"
+                        >
+                          Confirm
+                        </button>
+                      </div>
+                    </motion.div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
               <div className="w-full flex flex-col gap-4">
                 <button

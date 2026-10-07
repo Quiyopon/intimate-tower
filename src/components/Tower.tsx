@@ -57,7 +57,7 @@ function InstabilityTracker({ isCollapsed, blocksRemoved }: { isCollapsed: boole
         barEl.style.width = '100%';
         barEl.className = 'h-full rounded-full bg-gradient-to-r transition-colors duration-200 from-pink-500 to-red-600 shadow-[0_0_15px_rgba(225,29,72,0.9)]';
         textEl.className = 'text-sm font-black text-red-400 animate-pulse drop-shadow-[0_0_8px_rgba(248,113,113,0.8)]';
-        if (containerEl) containerEl.className = 'absolute bottom-safe-8 bottom-8 left-1/2 -translate-x-1/2 w-72 text-center pointer-events-none z-10 animate-pulse';
+        if (containerEl) containerEl.className = 'absolute bottom-8 pb-6 left-1/2 -translate-x-1/2 w-72 text-center pointer-events-none z-10 animate-pulse';
       }
       return;
     }
@@ -112,15 +112,15 @@ function InstabilityTracker({ isCollapsed, blocksRemoved }: { isCollapsed: boole
       if (val < 40) {
         barEl.className = 'h-full rounded-full bg-gradient-to-r transition-colors duration-200 from-cyan-400 to-blue-500 shadow-[0_0_10px_rgba(34,211,238,0.8)]';
         textEl.className = 'text-sm font-black text-slate-200';
-        if (containerEl) containerEl.className = 'absolute bottom-safe-8 bottom-8 left-1/2 -translate-x-1/2 w-72 text-center pointer-events-none z-10';
+        if (containerEl) containerEl.className = 'absolute bottom-8 pb-6 left-1/2 -translate-x-1/2 w-72 text-center pointer-events-none z-10';
       } else if (val < 70) {
         barEl.className = 'h-full rounded-full bg-gradient-to-r transition-colors duration-200 from-yellow-400 to-amber-500 shadow-[0_0_10px_rgba(250,204,21,0.8)]';
         textEl.className = 'text-sm font-black text-slate-200';
-        if (containerEl) containerEl.className = 'absolute bottom-safe-8 bottom-8 left-1/2 -translate-x-1/2 w-72 text-center pointer-events-none z-10';
+        if (containerEl) containerEl.className = 'absolute bottom-8 pb-6 left-1/2 -translate-x-1/2 w-72 text-center pointer-events-none z-10';
       } else {
         barEl.className = 'h-full rounded-full bg-gradient-to-r transition-colors duration-200 from-pink-500 to-red-600 shadow-[0_0_15px_rgba(225,29,72,0.9)]';
         textEl.className = 'text-sm font-black text-red-400 animate-pulse drop-shadow-[0_0_8px_rgba(248,113,113,0.8)]';
-        if (containerEl) containerEl.className = 'absolute bottom-safe-8 bottom-8 left-1/2 -translate-x-1/2 w-72 text-center pointer-events-none z-10 animate-pulse';
+        if (containerEl) containerEl.className = 'absolute bottom-8 pb-6 left-1/2 -translate-x-1/2 w-72 text-center pointer-events-none z-10 animate-pulse';
       }
     }
   });
@@ -267,6 +267,9 @@ function PhysicsBlock({ block, onPullBlock, isCollapsed, onCollapse, pullCount, 
 export function Tower({ blocks, onPullBlock, isCollapsed, onCollapse, isDareActive = false }: TowerProps) {
   const [hasInteracted, setHasInteracted] = useState(false);
   const controlsRef = useRef<any>(null);
+  
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+  const cameraZ = isMobile ? 16 : 14;
 
   return (
     <div className="w-full h-full absolute inset-0 touch-none">
@@ -283,7 +286,7 @@ export function Tower({ blocks, onPullBlock, isCollapsed, onCollapse, isDareActi
         </div>
       )}
 
-      <Canvas shadows camera={{ position: [14, 12, 14], fov: 35 }}>
+      <Canvas shadows camera={{ position: [14, 12, cameraZ], fov: 35 }}>
         <color attach="background" args={['#05050f']} />
         <fog attach="fog" args={['#05050f', 15, 35]} />
         
