@@ -135,7 +135,7 @@ export function SettingsModal({
           </button>
         </div>
 
-        <div className="flex px-4 pt-4 bg-slate-900 border-b border-slate-800 gap-2">
+        <div className="flex px-4 pt-4 bg-[#0d0f17] z-20 relative border-b border-slate-800 gap-2">
           {(['tiers', 'prompts', 'game'] as const).map(tab => (
             <button
               key={tab}
@@ -351,7 +351,7 @@ export function SettingsModal({
                         
                         {/* Pagination UI */}
                         {filtered.length > PROMPTS_PER_PAGE && (
-                          <div className="flex justify-between items-center mt-6 pt-4 border-t border-slate-700/50">
+                          <div className="flex justify-between items-center mt-6 pt-4 border-t border-slate-700/50 mb-4 pb-4">
                             <button 
                               onClick={() => setPromptPage(p => Math.max(1, p - 1))}
                               disabled={promptPage === 1}
@@ -447,7 +447,7 @@ export function SettingsModal({
                         <p className="text-sm text-slate-300 flex-1 pt-1 leading-relaxed">{forfeit}</p>
                         <button
                           onClick={() => onDeleteForfeit(forfeit)}
-                          className="bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg transition-colors shrink-0"
+                          className="bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg transition-colors shrink-0"
                           aria-label="Delete forfeit"
                         >
                           <Trash2 className="w-4 h-4" />
